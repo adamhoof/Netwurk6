@@ -7,15 +7,16 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
 public class SimulationWorkspaceView {
     private final Stage stage;
     private Scene scene;
+    private AnchorPane simulationWorkspace;
 
-    private final SimulationActionsListener simulationActionsListener;
+    private ToolBar toolBar;
+
+    private SimulationActionsListener simulationActionsListener;
 
     public SimulationWorkspaceView(Stage stage, SimulationActionsListener simulationActionsListener) {
         this.stage = stage;
@@ -24,39 +25,62 @@ public class SimulationWorkspaceView {
     }
 
     private void initializeView() {
-        AnchorPane simulationWorkspace = new AnchorPane();
+        simulationWorkspace = new AnchorPane();
+        toolBar = new ToolBar();
 
-        ToolBar toolBar = new ToolBar();
+        Button routerToolBarButton = setupRouterToolBarButton();
 
-        Circle circle = new Circle(10);
-        circle.setFill(Color.BLUEVIOLET);
-        Button routerToolBarButton = createToolBarButton(circle, "Router");
-        routerToolBarButton.setOnAction(event -> simulationActionsListener.addRouter());
+        toolBar.getItems().addAll(routerToolBarButton);
 
-
-        Rectangle rectangle = new Rectangle(20, 10);
-        rectangle.setFill(Color.CADETBLUE);
-        Button switchToolBarButton = createToolBarButton(rectangle, "Switch");
-
-        Rectangle square = new Rectangle(20, 20);
-        square.setFill(Color.RED);
-        Button pcToolBarButton = createToolBarButton(square, "PC");
-
-        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton);
         simulationWorkspace.getChildren().add(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
-
         scene = new Scene(simulationWorkspace, 800, 600);
     }
 
-    private Button createToolBarButton(Shape shape, String name) {
-        Button button = new Button();
-        button.setText(name);
+    private Circle createRouterRepresentation() {
+        Circle router = new Circle(10); // Radius of 10
+        router.setFill(Color.BLUEVIOLET); // Color it for distinction
+        return router;
+    }
 
-        if (shape != null) {
-            button.setGraphic(shape);
-        }
-        return button;
+    private Button setupRouterToolBarButton() {
+        Button routerButton = new Button("Router");
+        Circle routerButtonStyle = createRouterRepresentation();
+        routerButton.setGraphic(routerButtonStyle);
+
+        routerButton.setOnAction(event -> {
+            Circle clone = new Circle(routerButtonStyle.getRadius());
+            clone.setFill(routerButtonStyle.getFill());
+            simulationWorkspace.getChildren().add(clone);
+            setupDragAndDrop(clone);
+        });
+
+        return routerButton;
+    }
+
+    private void setupDragAndDrop(Circle router) {
+        // Capture initial mouse click position
+       /* router.setOnMousePressed(mouseEvent -> {
+            router.setCenterX(mouseEvent.getX());
+            router.setCenterY(mouseEvent.getY());
+        });*/
+
+        // Update router position as mouse moves
+        simulationWorkspace.setOnMouseDragged(mouseEvent -> {
+            router.setCenterX(mouseEvent.getX());
+            router.setCenterY(mouseEvent.getY());
+        });
+
+        // Finalize router position on mouse release
+        simulationWorkspace.setOnMouseReleased(mouseEvent -> {
+            router.setCenterX(mouseEvent.getX());
+            router.setCenterY(mouseEvent.getY());
+
+            // Remove drag-and-drop handlers to stop dragging
+            simulationWorkspace.setOnMouseDragged(null);
+            simulationWorkspace.setOnMouseReleased(null);
+            simulationActionsListener.addedRouter();
+        });
     }
 
     public void display() {

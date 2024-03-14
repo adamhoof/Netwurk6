@@ -7,7 +7,7 @@ public class MasterController implements ViewActionsListener, SimulationActionsL
     private final SimulationController simulationController;
 
     public MasterController(Stage stage) {
-        this.viewTransitionController = new ViewTransitionController(stage, this);
+        this.viewTransitionController = new ViewTransitionController(stage, this, this);
         this.simulationController = new SimulationController(this);
 
         this.viewTransitionController.setViewActionsListener(this);
@@ -24,7 +24,7 @@ public class MasterController implements ViewActionsListener, SimulationActionsL
     }
 
     @Override
-    public void addRouter() {
+    public void addedRouter() {
         simulationController.addRouter();
     }
 

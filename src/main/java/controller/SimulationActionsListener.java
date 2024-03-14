@@ -1,7 +1,7 @@
 package controller;
 
 public interface SimulationActionsListener {
-    void addRouter();
+    void addedRouter();
     void addSwitch();
     void addPC();
 }

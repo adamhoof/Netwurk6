@@ -5,7 +5,7 @@ public class SimulationController {
 
     public SimulationController(SimulationActionsListener listener) {
 
-         this.listener = listener;
+        this.listener = listener;
     }
 
     public void addRouter() {
@@ -24,3 +24,4 @@ public class SimulationController {
         this.listener = listener;
     }
 }
+

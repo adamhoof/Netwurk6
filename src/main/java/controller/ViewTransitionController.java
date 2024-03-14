@@ -13,8 +13,9 @@ public class ViewTransitionController {
     private SimulationActionsListener simulationActionsListener;
 
 
-    public ViewTransitionController(Stage stage, ViewActionsListener listener) {
-        this.viewActionsListener = listener;
+    public ViewTransitionController(Stage stage, ViewActionsListener viewActionsListener, SimulationActionsListener simulationActionsListener) {
+        this.viewActionsListener = viewActionsListener;
+        this.simulationActionsListener = simulationActionsListener;
         this.stage = stage;
     }
 
