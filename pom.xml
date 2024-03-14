@@ -36,7 +36,7 @@
                         <!-- Usage: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>cz.cvut.fel.pjv.hofmaad2.App</mainClass>
+                            <mainClass>entry.App</mainClass>
                         </configuration>
                     </execution>
                 </executions>
