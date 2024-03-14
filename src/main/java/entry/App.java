@@ -1,19 +1,15 @@
 package entry;
 
 import javafx.application.Application;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import view.Startup;
+import view.StartupView;
 
 public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) {
 
-        Startup startup = new Startup(primaryStage);
+        StartupView startup = new StartupView(primaryStage);
         startup.display();
     }
 

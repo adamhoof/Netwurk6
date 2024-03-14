@@ -6,12 +6,12 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class Startup {
+public class StartupView {
 
     private final Stage stage;
     private Scene scene;
 
-    public Startup(Stage stage) {
+    public StartupView(Stage stage) {
         this.stage = stage;
         initializeView();
     }
