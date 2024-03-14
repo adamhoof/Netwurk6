@@ -9,21 +9,30 @@ public class ViewTransitionController {
     private StartupView startupView;
     private SimulationWorkspaceView simulationWorkspaceView;
 
-    public ViewTransitionController(Stage stage) {
+    private ViewActionsListener viewActionsListener;
+    private SimulationActionsListener simulationActionsListener;
+
+
+    public ViewTransitionController(Stage stage, ViewActionsListener listener) {
+        this.viewActionsListener = listener;
         this.stage = stage;
     }
 
     public void showStartupView() {
         if (startupView == null) {
-            this.startupView = new StartupView(this.stage, this);
+            this.startupView = new StartupView(this.stage, viewActionsListener);
         }
         startupView.display();
     }
 
     public void showSimulationWorkspaceView() {
         if (simulationWorkspaceView == null) {
-            this.simulationWorkspaceView = new SimulationWorkspaceView(stage, this);
+            this.simulationWorkspaceView = new SimulationWorkspaceView(this.stage, simulationActionsListener);
         }
         simulationWorkspaceView.display();
+    }
+
+    public void setViewActionsListener(ViewActionsListener listener) {
+        this.viewActionsListener = listener;
     }
 }
