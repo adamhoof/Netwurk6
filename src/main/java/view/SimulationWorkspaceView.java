@@ -1,6 +1,6 @@
 package view;
 
-import controller.ViewTransitionController;
+import controller.SimulationActionsListener;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
@@ -15,11 +15,11 @@ public class SimulationWorkspaceView {
     private final Stage stage;
     private Scene scene;
 
-    private final ViewTransitionController viewTransitionController;
+    private final SimulationActionsListener simulationActionsListener;
 
-    public SimulationWorkspaceView(Stage stage, ViewTransitionController viewTransitionController) {
+    public SimulationWorkspaceView(Stage stage, SimulationActionsListener simulationActionsListener) {
         this.stage = stage;
-        this.viewTransitionController = viewTransitionController;
+        this.simulationActionsListener = simulationActionsListener;
         initializeView();
     }
 
@@ -31,6 +31,7 @@ public class SimulationWorkspaceView {
         Circle circle = new Circle(10);
         circle.setFill(Color.BLUEVIOLET);
         Button routerToolBarButton = createToolBarButton(circle, "Router");
+        routerToolBarButton.setOnAction(event -> simulationActionsListener.addRouter());
 
 
         Rectangle rectangle = new Rectangle(20, 10);
