@@ -1,6 +1,5 @@
 package view;
 
-import controller.ViewActionsListener;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -12,11 +11,8 @@ public class StartupView {
     private final Stage stage;
     private Scene scene;
 
-    private final ViewActionsListener viewActionsListener;
-
-    public StartupView(Stage stage, ViewActionsListener viewActionsListener) {
+    public StartupView(Stage stage) {
         this.stage = stage;
-        this.viewActionsListener = viewActionsListener;
         initializeView();
     }
 
@@ -27,7 +23,7 @@ public class StartupView {
 
         Button newButton = new Button("New");
         newButton.setPrefSize(200, 40);
-        newButton.setOnAction(event -> this.viewActionsListener.showSimulationWorkspaceView());
+        newButton.setOnAction(event -> {});
 
         Button loadButton = new Button("Load");
         loadButton.setPrefSize(200, 40);
