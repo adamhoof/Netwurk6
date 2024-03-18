@@ -33,9 +33,9 @@ public class SimulationWorkspaceView {
         simulationWorkspace = new AnchorPane();
         toolBar = new ToolBar();
 
-        Button routerToolBarButton = setupRouterToolBarButton();
-        Button switchToolBarButton = setupSwitchToolBarButton();
-        Button pcToolBarButton = setupPCToolBarButton();
+        Button routerToolBarButton = setupToolBarButton("Router", new Circle(10, Color.BLUEVIOLET));
+        Button switchToolBarButton = setupToolBarButton("Switch", new Rectangle(20, 10, Color.GREEN));
+        Button pcToolBarButton = setupToolBarButton("PC", new Rectangle(20, 20, Color.RED));
 
         toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton);
         toolBar.toFront();
@@ -48,75 +48,38 @@ public class SimulationWorkspaceView {
         scene = new Scene(simulationWorkspace, 800, 600);
     }
 
-    private Button setupRouterToolBarButton() {
-        Button routerButton = new Button("Router");
-        Circle routerRepresentation = new Circle(10);
-        routerRepresentation.setFill(Color.BLUEVIOLET);
-        routerButton.setGraphic(routerRepresentation);
+    private Button setupToolBarButton(String label, Shape shape) {
+        Button button = new Button(label);
+        button.setGraphic(shape);
 
-        routerButton.setOnAction(event -> {
+        button.setOnAction(event -> {
             if (cursorFollowingShape != null) {
                 simulationWorkspace.getChildren().remove(cursorFollowingShape);
             }
-
-            if (selectedShape != null){
+            if (selectedShape != null) {
                 deselectSelectedShape();
             }
-            spawn(routerRepresentation);
+            spawn(shape);
         });
-        return routerButton;
+
+        return button;
     }
 
-    private Button setupSwitchToolBarButton() {
-        Button switchButton = new Button("Switch");
-        Rectangle switchRepresentation = new Rectangle(20, 10);
-        switchRepresentation.setFill(Color.GREEN);
-        switchButton.setGraphic(switchRepresentation);
-
-        switchButton.setOnAction(clickEvent -> {
-            if (cursorFollowingShape != null) {
-                simulationWorkspace.getChildren().remove(cursorFollowingShape);
-            }
-
-            if (selectedShape != null){
-                deselectSelectedShape();
-            }
-            spawn(switchRepresentation);
-
-        });
-        return switchButton;
+    private void spawn(Shape toClone) {
+        Shape shape = cloneShape(toClone);
+        shape.setOpacity(0.5);
+        cursorFollowingShape = shape;
     }
 
-    private Button setupPCToolBarButton() {
-        Button pcButton = new Button("PC");
-        Rectangle pcRepresentation = new Rectangle(20, 20);
-        pcRepresentation.setFill(Color.RED);
-        pcButton.setGraphic(pcRepresentation);
-
-        pcButton.setOnAction(clickEvent -> {
-            if (cursorFollowingShape != null) {
-                simulationWorkspace.getChildren().remove(cursorFollowingShape);
-            }
-            if (selectedShape != null){
-                deselectSelectedShape();
-            }
-            spawn(pcRepresentation);
-        });
-        return pcButton;
-    }
-
-    private void spawn(Shape shape) {
+    private Shape cloneShape(Shape shape) {
         if (shape instanceof Circle) {
             Circle original = (Circle) shape;
-            cursorFollowingShape = new Circle(original.getRadius() * 3, original.getFill());
+            return new Circle(original.getRadius() * 3, original.getFill());
         } else if (shape instanceof Rectangle) {
             Rectangle original = (Rectangle) shape;
-            cursorFollowingShape = new Rectangle(original.getWidth() * 3, original.getHeight() * 3, original.getFill());
-        } else {
-            System.out.println("Wrong shape boi");
+            return new Rectangle(original.getWidth() * 3, original.getHeight() * 3, original.getFill());
         }
-        cursorFollowingShape.setOpacity(0.5);
-
+        throw new IllegalArgumentException("Unsupported shape type");
     }
 
     private void setupShapeDragAndDrop(Shape shape) {
@@ -143,7 +106,6 @@ public class SimulationWorkspaceView {
 
     private void deselectSelectedShape() {
         selectedShape.setStrokeWidth(0);
-
     }
 
     private void placeFollowingShape() {
