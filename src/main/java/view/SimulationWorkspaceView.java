@@ -3,7 +3,10 @@ package view;
 import controller.MasterController;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -17,6 +20,8 @@ public class SimulationWorkspaceView {
     private Scene scene;
     private AnchorPane simulationWorkspace;
 
+    private ContextMenu netwrokDeviceContextMenu;
+    private Shape contextMenuShape;
     private MasterController masterController;
 
     ToolBar toolBar;
@@ -41,6 +46,9 @@ public class SimulationWorkspaceView {
         toolBar.toFront();
         simulationWorkspace.getChildren().add(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
+
+        netwrokDeviceContextMenu = new ContextMenu();
+        generateNetworkDeviceContextMenu(netwrokDeviceContextMenu);
 
         setupWorkspaceEvents();
         setupFollowingShapeEvents();
@@ -72,7 +80,6 @@ public class SimulationWorkspaceView {
                     simulationWorkspace.getChildren().add(cursorFollowingShape);
                     cursorFollowingShape.toBack();
                 }
-
                 cursorFollowingShape.setLayoutX(mouseEvent.getSceneX());
                 cursorFollowingShape.setLayoutY(mouseEvent.getSceneY());
             }
@@ -95,22 +102,42 @@ public class SimulationWorkspaceView {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
         shape.setOnMousePressed(mouseEvent -> {
-            if (selectedShape != null) {
-                deselectSelectedShape();
-            }
-            cursorDistanceFromShapeTopLeft[0] = shape.getLayoutX() - mouseEvent.getSceneX();
-            cursorDistanceFromShapeTopLeft[1] = shape.getLayoutY() - mouseEvent.getSceneY();
+            if (mouseEvent.getButton() == MouseButton.PRIMARY) {
+                if (selectedShape != null) {
+                    deselectSelectedShape();
+                }
+                cursorDistanceFromShapeTopLeft[0] = shape.getLayoutX() - mouseEvent.getSceneX();
+                cursorDistanceFromShapeTopLeft[1] = shape.getLayoutY() - mouseEvent.getSceneY();
 
-            selectedShape = shape;
-            selectedShape.setStroke(Color.BLACK);
-            selectedShape.setStrokeWidth(4);
-            selectedShape.toFront();
+                selectedShape = shape;
+                selectedShape.setStroke(Color.BLACK);
+                selectedShape.setStrokeWidth(4);
+                selectedShape.toFront();
+            } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                contextMenuShape = shape;
+                netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), mouseEvent.getScreenX(), mouseEvent.getScreenY());
+            }
         });
 
         shape.setOnMouseDragged(mouseEvent -> {
-            shape.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
-            shape.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+            if (mouseEvent.getButton() == MouseButton.PRIMARY) {
+                shape.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
+                shape.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+            }
         });
+    }
+
+    private void generateNetworkDeviceContextMenu(ContextMenu contextMenu) {
+        MenuItem propertiesOption = new MenuItem("Properties");
+
+        MenuItem deleteOption = new MenuItem("Delete");
+        deleteOption.setOnAction(event -> {
+            if (contextMenuShape != null) {
+                simulationWorkspace.getChildren().remove(contextMenuShape);
+                contextMenuShape = null;
+            }
+        });
+        contextMenu.getItems().addAll(propertiesOption, deleteOption);
     }
 
     private void spawn(Shape toClone) {
