@@ -4,6 +4,7 @@ import controller.MasterController;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -20,8 +21,8 @@ public class SimulationWorkspaceView {
 
     ToolBar toolBar;
 
-    // This will hold the router representation that follows the mouse
     private Shape cursorFollowingShape = null;
+    private Shape selectedShape = null;
 
     public SimulationWorkspaceView(Stage stage) {
         this.stage = stage;
@@ -41,6 +42,7 @@ public class SimulationWorkspaceView {
         simulationWorkspace.getChildren().add(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
 
+        setupWorkspaceEvents();
         setupFollowingShapeEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
@@ -56,6 +58,10 @@ public class SimulationWorkspaceView {
             if (cursorFollowingShape != null) {
                 simulationWorkspace.getChildren().remove(cursorFollowingShape);
             }
+
+            if (selectedShape != null){
+                deselectSelectedShape();
+            }
             spawn(routerRepresentation);
         });
         return routerButton;
@@ -70,6 +76,10 @@ public class SimulationWorkspaceView {
         switchButton.setOnAction(clickEvent -> {
             if (cursorFollowingShape != null) {
                 simulationWorkspace.getChildren().remove(cursorFollowingShape);
+            }
+
+            if (selectedShape != null){
+                deselectSelectedShape();
             }
             spawn(switchRepresentation);
 
@@ -87,7 +97,10 @@ public class SimulationWorkspaceView {
             if (cursorFollowingShape != null) {
                 simulationWorkspace.getChildren().remove(cursorFollowingShape);
             }
-            spawn( pcRepresentation);
+            if (selectedShape != null){
+                deselectSelectedShape();
+            }
+            spawn(pcRepresentation);
         });
         return pcButton;
     }
@@ -103,7 +116,64 @@ public class SimulationWorkspaceView {
             System.out.println("Wrong shape boi");
         }
         cursorFollowingShape.setOpacity(0.5);
+
     }
+
+    private void setupShapeDragAndDrop(Shape shape) {
+        final double[] cursorDistanceFromShapeTopLeft = new double[2];
+
+        shape.setOnMousePressed(mouseEvent -> {
+            if (selectedShape != null) {
+                deselectSelectedShape();
+            }
+            cursorDistanceFromShapeTopLeft[0] = shape.getLayoutX() - mouseEvent.getSceneX();
+            cursorDistanceFromShapeTopLeft[1] = shape.getLayoutY() - mouseEvent.getSceneY();
+
+            selectedShape = shape;
+            selectedShape.setStroke(Color.BLACK);
+            selectedShape.setStrokeWidth(4);
+            selectedShape.toFront();
+        });
+
+        shape.setOnMouseDragged(mouseEvent -> {
+            shape.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
+            shape.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+        });
+    }
+
+    private void deselectSelectedShape() {
+        selectedShape.setStrokeWidth(0);
+
+    }
+
+    private void placeFollowingShape() {
+        cursorFollowingShape.setOpacity(1.0);
+        cursorFollowingShape = null;
+    }
+
+    private boolean cursorAtShape(Shape shape, MouseEvent mouseEvent) {
+        if (shape != null) {
+
+            double localX = shape.sceneToLocal(mouseEvent.getSceneX(), mouseEvent.getSceneY()).getX();
+            double localY = shape.sceneToLocal(mouseEvent.getSceneX(), mouseEvent.getSceneY()).getY();
+
+            return shape.contains(localX, localY);
+        }
+        return false;
+    }
+
+    private void setupWorkspaceEvents() {
+        simulationWorkspace.setOnMouseClicked(mouseEvent -> {
+            if (cursorFollowingShape != null) {
+                setupShapeDragAndDrop(cursorFollowingShape);
+                placeFollowingShape();
+            } else if (!cursorAtShape(selectedShape, mouseEvent) && selectedShape != null && cursorFollowingShape == null) {
+                deselectSelectedShape();
+                selectedShape = null;
+            }
+        });
+    }
+
 
     private void setupFollowingShapeEvents() {
         simulationWorkspace.setOnMouseMoved(mouseEvent -> {
@@ -115,15 +185,6 @@ public class SimulationWorkspaceView {
 
                 cursorFollowingShape.setLayoutX(mouseEvent.getSceneX());
                 cursorFollowingShape.setLayoutY(mouseEvent.getSceneY());
-            }
-        });
-
-        simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-
-            if (cursorFollowingShape != null) {
-                cursorFollowingShape.setOpacity(1.0);
-                cursorFollowingShape = null;
-
             }
         });
     }
