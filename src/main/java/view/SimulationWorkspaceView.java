@@ -4,6 +4,7 @@ import controller.MasterController;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -44,6 +45,7 @@ public class SimulationWorkspaceView {
 
         setupWorkspaceEvents();
         setupFollowingShapeEvents();
+        setupKeyEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
     }
@@ -124,14 +126,37 @@ public class SimulationWorkspaceView {
         return false;
     }
 
+    private boolean followingShapeExists() {
+        return cursorFollowingShape != null;
+    }
+
+    private boolean selectedShapeExists() {
+        return selectedShape != null && cursorFollowingShape == null;
+    }
+
     private void setupWorkspaceEvents() {
         simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-            if (cursorFollowingShape != null) {
+            if (followingShapeExists()) {
                 setupShapeDragAndDrop(cursorFollowingShape);
                 placeFollowingShape();
-            } else if (!cursorAtShape(selectedShape, mouseEvent) && selectedShape != null && cursorFollowingShape == null) {
+            } else if (selectedShapeExists() && !cursorAtShape(selectedShape, mouseEvent)) {
                 deselectSelectedShape();
                 selectedShape = null;
+            }
+        });
+    }
+
+    private void handleDeleteKeyPress() {
+        if (selectedShape != null) {
+            simulationWorkspace.getChildren().remove(selectedShape);
+            selectedShape = null;
+        }
+    }
+
+    private void setupKeyEvents() {
+        simulationWorkspace.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.DELETE) {
+                handleDeleteKeyPress();
             }
         });
     }
