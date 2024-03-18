@@ -4,7 +4,6 @@ import controller.MasterController;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -45,7 +44,6 @@ public class SimulationWorkspaceView {
 
         setupWorkspaceEvents();
         setupFollowingShapeEvents();
-        setupKeyEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
     }
@@ -67,24 +65,33 @@ public class SimulationWorkspaceView {
         return button;
     }
 
-    private void spawn(Shape toClone) {
-        Shape shape = cloneShape(toClone);
-        shape.setOpacity(0.5);
-        cursorFollowingShape = shape;
+    private void setupFollowingShapeEvents() {
+        simulationWorkspace.setOnMouseMoved(mouseEvent -> {
+            if (cursorFollowingShape != null) {
+                if (!simulationWorkspace.getChildren().contains(cursorFollowingShape)) {
+                    simulationWorkspace.getChildren().add(cursorFollowingShape);
+                    cursorFollowingShape.toBack();
+                }
+
+                cursorFollowingShape.setLayoutX(mouseEvent.getSceneX());
+                cursorFollowingShape.setLayoutY(mouseEvent.getSceneY());
+            }
+        });
     }
 
-    private Shape cloneShape(Shape shape) {
-        if (shape instanceof Circle) {
-            Circle original = (Circle) shape;
-            return new Circle(original.getRadius() * 3, original.getFill());
-        } else if (shape instanceof Rectangle) {
-            Rectangle original = (Rectangle) shape;
-            return new Rectangle(original.getWidth() * 3, original.getHeight() * 3, original.getFill());
-        }
-        throw new IllegalArgumentException("Unsupported shape type");
+    private void setupWorkspaceEvents() {
+        simulationWorkspace.setOnMouseClicked(mouseEvent -> {
+            if (followingShapeExists()) {
+                setupPlacedShapeEvents(cursorFollowingShape);
+                placeFollowingShape();
+            } else if (selectedShapeExists() && !cursorAtShape(selectedShape, mouseEvent)) {
+                deselectSelectedShape();
+                selectedShape = null;
+            }
+        });
     }
 
-    private void setupShapeDragAndDrop(Shape shape) {
+    private void setupPlacedShapeEvents(Shape shape) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
         shape.setOnMousePressed(mouseEvent -> {
@@ -104,6 +111,23 @@ public class SimulationWorkspaceView {
             shape.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
             shape.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
         });
+    }
+
+    private void spawn(Shape toClone) {
+        Shape shape = cloneShape(toClone);
+        shape.setOpacity(0.5);
+        cursorFollowingShape = shape;
+    }
+
+    private Shape cloneShape(Shape shape) {
+        if (shape instanceof Circle) {
+            Circle original = (Circle) shape;
+            return new Circle(original.getRadius() * 3, original.getFill());
+        } else if (shape instanceof Rectangle) {
+            Rectangle original = (Rectangle) shape;
+            return new Rectangle(original.getWidth() * 3, original.getHeight() * 3, original.getFill());
+        }
+        throw new IllegalArgumentException("Unsupported shape type");
     }
 
     private void deselectSelectedShape() {
@@ -132,48 +156,6 @@ public class SimulationWorkspaceView {
 
     private boolean selectedShapeExists() {
         return selectedShape != null && cursorFollowingShape == null;
-    }
-
-    private void setupWorkspaceEvents() {
-        simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-            if (followingShapeExists()) {
-                setupShapeDragAndDrop(cursorFollowingShape);
-                placeFollowingShape();
-            } else if (selectedShapeExists() && !cursorAtShape(selectedShape, mouseEvent)) {
-                deselectSelectedShape();
-                selectedShape = null;
-            }
-        });
-    }
-
-    private void handleDeleteKeyPress() {
-        if (selectedShape != null) {
-            simulationWorkspace.getChildren().remove(selectedShape);
-            selectedShape = null;
-        }
-    }
-
-    private void setupKeyEvents() {
-        simulationWorkspace.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.DELETE) {
-                handleDeleteKeyPress();
-            }
-        });
-    }
-
-
-    private void setupFollowingShapeEvents() {
-        simulationWorkspace.setOnMouseMoved(mouseEvent -> {
-            if (cursorFollowingShape != null) {
-                if (!simulationWorkspace.getChildren().contains(cursorFollowingShape)) {
-                    simulationWorkspace.getChildren().add(cursorFollowingShape);
-                    cursorFollowingShape.toBack();
-                }
-
-                cursorFollowingShape.setLayoutX(mouseEvent.getSceneX());
-                cursorFollowingShape.setLayoutY(mouseEvent.getSceneY());
-            }
-        });
     }
 
     public void display() {
