@@ -1,14 +1,14 @@
 package view;
 
-import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 
 public class Switch extends NetworkDevice {
-    public Switch(ImageView imageView) {
-        super(NetworkDeviceType.SWITCH, imageView);
+    public Switch(Image image) {
+        super(NetworkDeviceType.SWITCH, image);
     }
 
     @Override
-    public NetworkDevice deepCopy(){
-        return new Switch(new ImageView(this.getImageView().getImage()));
+    public NetworkDevice deepCopy() {
+        return new Switch(this.getImage());
     }
 }

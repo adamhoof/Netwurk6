@@ -1,14 +1,14 @@
 package view;
 
-import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 
 public class PC extends NetworkDevice {
-    public PC(ImageView imageView) {
-        super(NetworkDeviceType.PC, imageView);
+    public PC(Image image) {
+        super(NetworkDeviceType.PC, image);
     }
 
     @Override
     public NetworkDevice deepCopy(){
-        return new PC(new ImageView(this.getImageView().getImage()));
+        return new PC(this.getImage());
     }
 }

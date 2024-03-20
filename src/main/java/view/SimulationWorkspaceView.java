@@ -34,9 +34,9 @@ public class SimulationWorkspaceView {
         simulationWorkspace = new AnchorPane();
         toolBar = new ToolBar();
 
-        Router routerView = new Router(new ImageView(new Image("router.png")));
-        Switch switchView = new Switch(new ImageView(new Image("switch.png")));
-        PC pcView = new PC(new ImageView(new Image("server.png")));
+        Router routerView = new Router(new Image("router.png"));
+        Switch switchView = new Switch(new Image("switch.png"));
+        PC pcView = new PC(new Image("server.png"));
 
         Button routerToolBarButton = createNetworkDeviceButton(routerView);
         Button switchToolBarButton = createNetworkDeviceButton(switchView);
@@ -58,7 +58,7 @@ public class SimulationWorkspaceView {
 
     private Button createNetworkDeviceButton(NetworkDevice networkDevice) {
         Button button = new Button(networkDevice.getNetworkDeviceType().toString());
-        ImageView buttonIcon = new ImageView(networkDevice.getImageView().getImage());
+        ImageView buttonIcon = new ImageView(networkDevice.getImage());
         buttonIcon.setFitHeight(50);
         buttonIcon.setFitWidth(50);
         buttonIcon.setPreserveRatio(true);
@@ -66,7 +66,7 @@ public class SimulationWorkspaceView {
 
         button.setOnAction(event -> {
             if (cursorFollowingNetworkDevice != null) {
-                simulationWorkspace.getChildren().remove(cursorFollowingNetworkDevice.getImageView());
+                simulationWorkspace.getChildren().remove(cursorFollowingNetworkDevice);
             }
             spawn(networkDevice);
         });
@@ -77,12 +77,12 @@ public class SimulationWorkspaceView {
     private void setupCurrentlyPlacedNetworkDeviceEvents() {
         simulationWorkspace.setOnMouseMoved(mouseEvent -> {
             if (cursorFollowingNetworkDevice != null) {
-                if (!simulationWorkspace.getChildren().contains(cursorFollowingNetworkDevice.getImageView())) {
-                    simulationWorkspace.getChildren().add(cursorFollowingNetworkDevice.getImageView());
-                    cursorFollowingNetworkDevice.getImageView().toBack();
+                if (!simulationWorkspace.getChildren().contains(cursorFollowingNetworkDevice)) {
+                    simulationWorkspace.getChildren().add(cursorFollowingNetworkDevice);
+                    cursorFollowingNetworkDevice.toBack();
                 }
-                cursorFollowingNetworkDevice.getImageView().setLayoutX(mouseEvent.getSceneX());
-                cursorFollowingNetworkDevice.getImageView().setLayoutY(mouseEvent.getSceneY());
+                cursorFollowingNetworkDevice.setLayoutX(mouseEvent.getSceneX());
+                cursorFollowingNetworkDevice.setLayoutY(mouseEvent.getSceneY());
             }
         });
     }
@@ -99,21 +99,21 @@ public class SimulationWorkspaceView {
     private void makeInteractive(NetworkDevice networkDevice) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
-        networkDevice.getImageView().setOnMousePressed(mouseEvent -> {
+        networkDevice.setOnMousePressed(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
 
-                cursorDistanceFromShapeTopLeft[0] = networkDevice.getImageView().getLayoutX() - mouseEvent.getSceneX();
-                cursorDistanceFromShapeTopLeft[1] = networkDevice.getImageView().getLayoutY() - mouseEvent.getSceneY();
+                cursorDistanceFromShapeTopLeft[0] = networkDevice.getLayoutX() - mouseEvent.getSceneX();
+                cursorDistanceFromShapeTopLeft[1] = networkDevice.getLayoutY() - mouseEvent.getSceneY();
             } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
                 contextMenuNetworkDevice = networkDevice;
                 netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), mouseEvent.getScreenX(), mouseEvent.getScreenY());
             }
         });
 
-        networkDevice.getImageView().setOnMouseDragged(mouseEvent -> {
+        networkDevice.setOnMouseDragged(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
-                networkDevice.getImageView().setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
-                networkDevice.getImageView().setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+                networkDevice.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
+                networkDevice.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
             }
         });
     }
@@ -124,7 +124,7 @@ public class SimulationWorkspaceView {
         MenuItem deleteOption = new MenuItem("Delete");
         deleteOption.setOnAction(event -> {
             if (contextMenuNetworkDevice != null) {
-                simulationWorkspace.getChildren().remove(contextMenuNetworkDevice.getImageView());
+                simulationWorkspace.getChildren().remove(contextMenuNetworkDevice);
                 contextMenuNetworkDevice = null;
             }
         });
@@ -133,12 +133,12 @@ public class SimulationWorkspaceView {
 
     private void spawn(NetworkDevice networkDevice) {
         NetworkDevice deepCopy = networkDevice.deepCopy();
-        deepCopy.getImageView().setOpacity(0.5);
+        deepCopy.setOpacity(0.5);
         cursorFollowingNetworkDevice = deepCopy;
     }
 
     private void placeFollowingNetworkDevice() {
-        cursorFollowingNetworkDevice.getImageView().setOpacity(1.0);
+        cursorFollowingNetworkDevice.setOpacity(1.0);
         cursorFollowingNetworkDevice = null;
     }
 

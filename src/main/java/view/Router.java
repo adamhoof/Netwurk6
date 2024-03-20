@@ -1,15 +1,15 @@
 package view;
 
-import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 
 public class Router extends NetworkDevice {
-    public Router(ImageView imageView) {
-        super(NetworkDeviceType.ROUTER, imageView);
+    public Router(Image image) {
+        super(NetworkDeviceType.ROUTER, image);
     }
 
     @Override
     public NetworkDevice deepCopy() {
-        return new Router(new ImageView(this.getImageView().getImage()));
+        return new Router(this.getImage());
 
     }
 }
