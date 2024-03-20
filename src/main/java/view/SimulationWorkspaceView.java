@@ -22,6 +22,9 @@ public class SimulationWorkspaceView {
     private FollowingNetworkDeviceController followingNetworkDeviceController;
     private MasterController masterController;
 
+    private boolean isConnectionMode = false;
+    private NetworkDevice firstSelectedDevice = null;
+
     ToolBar toolBar;
 
     public SimulationWorkspaceView(Stage stage) {
@@ -78,13 +81,17 @@ public class SimulationWorkspaceView {
     }
 
     private Button createConnectorButton(ImageView icon) {
-        Button button = new Button("Connector");
+        Button connectorButton = new Button("Connector");
         icon.setFitHeight(40);
         icon.setFitWidth(40);
         icon.setPreserveRatio(true);
-        button.setGraphic(icon);
+        connectorButton.setGraphic(icon);
 
-        return button;
+        connectorButton.setOnAction(clickEvent -> {
+            isConnectionMode = true;
+        });
+
+        return connectorButton;
     }
 
     private void setupCurrentlyPlacedNetworkDeviceEvents() {
@@ -112,21 +119,21 @@ public class SimulationWorkspaceView {
     private void setupPlacedDeviceEvents(NetworkDevice networkDevice) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
-        networkDevice.setOnMousePressed(mouseEvent -> {
-            if (mouseEvent.getButton() == MouseButton.PRIMARY) {
+        networkDevice.setOnMousePressed(clickEvent -> {
+            if (clickEvent.getButton() == MouseButton.PRIMARY) {
 
-                cursorDistanceFromShapeTopLeft[0] = networkDevice.getLayoutX() - mouseEvent.getSceneX();
-                cursorDistanceFromShapeTopLeft[1] = networkDevice.getLayoutY() - mouseEvent.getSceneY();
-            } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                cursorDistanceFromShapeTopLeft[0] = networkDevice.getLayoutX() - clickEvent.getSceneX();
+                cursorDistanceFromShapeTopLeft[1] = networkDevice.getLayoutY() - clickEvent.getSceneY();
+            } else if (clickEvent.getButton() == MouseButton.SECONDARY) {
                 contextMenuNetworkDevice = networkDevice;
-                netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), mouseEvent.getScreenX(), mouseEvent.getScreenY());
+                netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), clickEvent.getScreenX(), clickEvent.getScreenY());
             }
         });
 
-        networkDevice.setOnMouseDragged(mouseEvent -> {
-            if (mouseEvent.getButton() == MouseButton.PRIMARY) {
-                networkDevice.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
-                networkDevice.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+        networkDevice.setOnMouseDragged(dragEvent -> {
+            if (dragEvent.getButton() == MouseButton.PRIMARY) {
+                networkDevice.setLayoutX(dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
+                networkDevice.setLayoutY(dragEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
             }
         });
     }
