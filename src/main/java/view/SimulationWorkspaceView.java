@@ -19,11 +19,10 @@ public class SimulationWorkspaceView {
 
     private ContextMenu netwrokDeviceContextMenu;
     private NetworkDevice contextMenuNetworkDevice;
+    private FollowingNetworkDeviceController followingNetworkDeviceController;
     private MasterController masterController;
 
     ToolBar toolBar;
-
-    private NetworkDevice cursorFollowingNetworkDevice = null;
 
     public SimulationWorkspaceView(Stage stage) {
         this.stage = stage;
@@ -41,14 +40,18 @@ public class SimulationWorkspaceView {
         Button routerToolBarButton = createNetworkDeviceButton(routerView);
         Button switchToolBarButton = createNetworkDeviceButton(switchView);
         Button pcToolBarButton = createNetworkDeviceButton(pcView);
+        Button connectorToolBarButton = createConnectorButton(new ImageView(new Image("connector.png")));
 
-        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton);
+        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton);
         toolBar.toFront();
+
         simulationWorkspace.getChildren().add(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
 
         netwrokDeviceContextMenu = new ContextMenu();
         generateNetworkDeviceContextMenu(netwrokDeviceContextMenu);
+
+        followingNetworkDeviceController = new FollowingNetworkDeviceController();
 
         setupWorkspaceEvents();
         setupCurrentlyPlacedNetworkDeviceEvents();
@@ -59,14 +62,14 @@ public class SimulationWorkspaceView {
     private Button createNetworkDeviceButton(NetworkDevice networkDevice) {
         Button button = new Button(networkDevice.getNetworkDeviceType().toString());
         ImageView buttonIcon = new ImageView(networkDevice.getImage());
-        buttonIcon.setFitHeight(50);
-        buttonIcon.setFitWidth(50);
+        buttonIcon.setFitHeight(40);
+        buttonIcon.setFitWidth(40);
         buttonIcon.setPreserveRatio(true);
         button.setGraphic(buttonIcon);
 
         button.setOnAction(event -> {
-            if (cursorFollowingNetworkDevice != null) {
-                simulationWorkspace.getChildren().remove(cursorFollowingNetworkDevice);
+            if (followingNetworkDeviceController.isFollowing()) {
+                simulationWorkspace.getChildren().remove(followingNetworkDeviceController.get());
             }
             spawn(networkDevice);
         });
@@ -74,24 +77,34 @@ public class SimulationWorkspaceView {
         return button;
     }
 
+    private Button createConnectorButton(ImageView icon) {
+        Button button = new Button("Connector");
+        icon.setFitHeight(40);
+        icon.setFitWidth(40);
+        icon.setPreserveRatio(true);
+        button.setGraphic(icon);
+
+        return button;
+    }
+
     private void setupCurrentlyPlacedNetworkDeviceEvents() {
         simulationWorkspace.setOnMouseMoved(mouseEvent -> {
-            if (cursorFollowingNetworkDevice != null) {
-                if (!simulationWorkspace.getChildren().contains(cursorFollowingNetworkDevice)) {
-                    simulationWorkspace.getChildren().add(cursorFollowingNetworkDevice);
-                    cursorFollowingNetworkDevice.toBack();
+            if (followingNetworkDeviceController.isFollowing()) {
+                if (!simulationWorkspace.getChildren().contains(followingNetworkDeviceController.get())) {
+                    simulationWorkspace.getChildren().add(followingNetworkDeviceController.get());
+                    followingNetworkDeviceController.get().toBack();
                 }
-                cursorFollowingNetworkDevice.setLayoutX(mouseEvent.getSceneX());
-                cursorFollowingNetworkDevice.setLayoutY(mouseEvent.getSceneY());
+                followingNetworkDeviceController.get().setLayoutX(mouseEvent.getSceneX());
+                followingNetworkDeviceController.get().setLayoutY(mouseEvent.getSceneY());
             }
         });
     }
 
     private void setupWorkspaceEvents() {
         simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-            if (networkDeviceFollowingCursor()) {
-                makeInteractive(cursorFollowingNetworkDevice);
-                placeFollowingNetworkDevice();
+            if (followingNetworkDeviceController.isFollowing()) {
+                makeInteractive(followingNetworkDeviceController.get());
+                followingNetworkDeviceController.place();
             }
         });
     }
@@ -134,16 +147,9 @@ public class SimulationWorkspaceView {
     private void spawn(NetworkDevice networkDevice) {
         NetworkDevice deepCopy = networkDevice.deepCopy();
         deepCopy.setOpacity(0.5);
-        cursorFollowingNetworkDevice = deepCopy;
-    }
-
-    private void placeFollowingNetworkDevice() {
-        cursorFollowingNetworkDevice.setOpacity(1.0);
-        cursorFollowingNetworkDevice = null;
-    }
-
-    private boolean networkDeviceFollowingCursor() {
-        return cursorFollowingNetworkDevice != null;
+        deepCopy.setFitWidth(70);
+        deepCopy.setFitHeight(70);
+        followingNetworkDeviceController.set(deepCopy);
     }
 
     public void display() {
