@@ -2,6 +2,8 @@ package entry;
 
 import controller.MasterController;
 import javafx.application.Application;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import view.SimulationWorkspaceView;
 
@@ -11,6 +13,10 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         SimulationWorkspaceView simulationWorkspaceView = new SimulationWorkspaceView(primaryStage);
         MasterController masterController = new MasterController(simulationWorkspaceView);
+
+        ImageView imageView = new ImageView(new Image("logo.png"));
+        primaryStage.getIcons().add(imageView.getImage());
+
         simulationWorkspaceView.display();
     }
 
