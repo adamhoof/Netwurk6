@@ -87,9 +87,7 @@ public class SimulationWorkspaceView {
         icon.setPreserveRatio(true);
         connectorButton.setGraphic(icon);
 
-        connectorButton.setOnAction(clickEvent -> {
-            isConnectionMode = true;
-        });
+        connectorButton.setOnAction(clickEvent -> isConnectionMode = true);
 
         return connectorButton;
     }
@@ -120,8 +118,18 @@ public class SimulationWorkspaceView {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
         networkDevice.setOnMousePressed(clickEvent -> {
-            if (clickEvent.getButton() == MouseButton.PRIMARY) {
+            if (isConnectionMode) {
+                if (firstSelectedDevice == null) {
+                    firstSelectedDevice = networkDevice;
+                } else {
+                    drawLine(firstSelectedDevice, networkDevice);
+                    isConnectionMode = false;
+                    firstSelectedDevice = null;
+                }
+                clickEvent.consume();
+            }
 
+            if (clickEvent.getButton() == MouseButton.PRIMARY) {
                 cursorDistanceFromShapeTopLeft[0] = networkDevice.getLayoutX() - clickEvent.getSceneX();
                 cursorDistanceFromShapeTopLeft[1] = networkDevice.getLayoutY() - clickEvent.getSceneY();
             } else if (clickEvent.getButton() == MouseButton.SECONDARY) {
@@ -132,8 +140,15 @@ public class SimulationWorkspaceView {
 
         networkDevice.setOnMouseDragged(dragEvent -> {
             if (dragEvent.getButton() == MouseButton.PRIMARY) {
-                networkDevice.setLayoutX(dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
-                networkDevice.setLayoutY(dragEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+                double newX = dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0];
+                double newY = dragEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1];
+
+                networkDevice.setLayoutX(newX);
+                networkDevice.setLayoutY(newY);
+
+                for (ConnectionLine line : networkDevice.getConnections()) {
+                    updateLinePosition(networkDevice, line);
+                }
             }
         });
     }
@@ -157,6 +172,33 @@ public class SimulationWorkspaceView {
         deepCopy.setFitWidth(70);
         deepCopy.setFitHeight(70);
         followingNetworkDeviceController.set(deepCopy);
+    }
+
+    private void drawLine(NetworkDevice startDevice, NetworkDevice endDevice) {
+        double startX = startDevice.getLayoutX() + startDevice.getFitWidth() / 2;
+        double startY = startDevice.getLayoutY() + startDevice.getFitHeight() / 2;
+        double endX = endDevice.getLayoutX() + endDevice.getFitWidth() / 2;
+        double endY = endDevice.getLayoutY() + endDevice.getFitHeight() / 2;
+
+        ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDevice, endDevice);
+        simulationWorkspace.getChildren().add(connectionLine);
+        connectionLine.toBack();
+
+        startDevice.addConnection(connectionLine);
+        endDevice.addConnection(connectionLine);
+    }
+
+    private void updateLinePosition(NetworkDevice networkDevice, ConnectionLine line) {
+
+        if (networkDevice.equals(line.getStartDevice())) {
+            line.setStartX(networkDevice.getLayoutX() + networkDevice.getFitWidth() / 2);
+            line.setStartY(networkDevice.getLayoutY() + networkDevice.getFitHeight() / 2);
+        }
+
+        if (networkDevice.equals(line.getEndDevice())) {
+            line.setEndX(networkDevice.getLayoutX() + networkDevice.getFitWidth() / 2);
+            line.setEndY(networkDevice.getLayoutY() + networkDevice.getFitHeight() / 2);
+        }
     }
 
     public void display() {

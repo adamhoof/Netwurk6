@@ -3,12 +3,16 @@ package view;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class NetworkDevice extends ImageView {
     private final NetworkDeviceType networkDeviceType;
 
     private final UUID uuid;
+
+    private final List<ConnectionLine> connections = new ArrayList<>();
 
     public NetworkDevice(NetworkDeviceType networkDeviceType, Image image) {
         super(image);
@@ -25,4 +29,12 @@ public abstract class NetworkDevice extends ImageView {
     }
 
     public abstract NetworkDevice deepCopy();
+
+    public void addConnection(ConnectionLine line) {
+        connections.add(line);
+    }
+
+    public List<ConnectionLine> getConnections() {
+        return connections;
+    }
 }
