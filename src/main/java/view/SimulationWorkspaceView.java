@@ -6,13 +6,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
 public class SimulationWorkspaceView {
@@ -21,13 +18,12 @@ public class SimulationWorkspaceView {
     private AnchorPane simulationWorkspace;
 
     private ContextMenu netwrokDeviceContextMenu;
-    private Shape contextMenuShape;
+    private NetworkDevice contextMenuNetworkDevice;
     private MasterController masterController;
 
     ToolBar toolBar;
 
-    private Shape cursorFollowingShape = null;
-    private Shape selectedShape = null;
+    private NetworkDevice cursorFollowingNetworkDevice = null;
 
     public SimulationWorkspaceView(Stage stage) {
         this.stage = stage;
@@ -38,9 +34,13 @@ public class SimulationWorkspaceView {
         simulationWorkspace = new AnchorPane();
         toolBar = new ToolBar();
 
-        Button routerToolBarButton = setupToolBarButton("Router", new Circle(10, Color.BLUEVIOLET));
-        Button switchToolBarButton = setupToolBarButton("Switch", new Rectangle(20, 10, Color.GREEN));
-        Button pcToolBarButton = setupToolBarButton("PC", new Rectangle(20, 20, Color.RED));
+        Router routerView = new Router(new ImageView(new Image("router.png")));
+        Switch switchView = new Switch(new ImageView(new Image("switch.png")));
+        PC pcView = new PC(new ImageView(new Image("server.png")));
+
+        Button routerToolBarButton = createNetworkDeviceButton(routerView);
+        Button switchToolBarButton = createNetworkDeviceButton(switchView);
+        Button pcToolBarButton = createNetworkDeviceButton(pcView);
 
         toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton);
         toolBar.toFront();
@@ -51,78 +51,69 @@ public class SimulationWorkspaceView {
         generateNetworkDeviceContextMenu(netwrokDeviceContextMenu);
 
         setupWorkspaceEvents();
-        setupFollowingShapeEvents();
+        setupCurrentlyPlacedNetworkDeviceEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
     }
 
-    private Button setupToolBarButton(String label, Shape shape) {
-        Button button = new Button(label);
-        button.setGraphic(shape);
+    private Button createNetworkDeviceButton(NetworkDevice networkDevice) {
+        Button button = new Button(networkDevice.getNetworkDeviceType().toString());
+        ImageView buttonIcon = new ImageView(networkDevice.getImageView().getImage());
+        buttonIcon.setFitHeight(50);
+        buttonIcon.setFitWidth(50);
+        buttonIcon.setPreserveRatio(true);
+        button.setGraphic(buttonIcon);
 
         button.setOnAction(event -> {
-            if (cursorFollowingShape != null) {
-                simulationWorkspace.getChildren().remove(cursorFollowingShape);
+            if (cursorFollowingNetworkDevice != null) {
+                simulationWorkspace.getChildren().remove(cursorFollowingNetworkDevice.getImageView());
             }
-            if (selectedShape != null) {
-                deselectSelectedShape();
-            }
-            spawn(shape);
+            spawn(networkDevice);
         });
 
         return button;
     }
 
-    private void setupFollowingShapeEvents() {
+    private void setupCurrentlyPlacedNetworkDeviceEvents() {
         simulationWorkspace.setOnMouseMoved(mouseEvent -> {
-            if (cursorFollowingShape != null) {
-                if (!simulationWorkspace.getChildren().contains(cursorFollowingShape)) {
-                    simulationWorkspace.getChildren().add(cursorFollowingShape);
-                    cursorFollowingShape.toBack();
+            if (cursorFollowingNetworkDevice != null) {
+                if (!simulationWorkspace.getChildren().contains(cursorFollowingNetworkDevice.getImageView())) {
+                    simulationWorkspace.getChildren().add(cursorFollowingNetworkDevice.getImageView());
+                    cursorFollowingNetworkDevice.getImageView().toBack();
                 }
-                cursorFollowingShape.setLayoutX(mouseEvent.getSceneX());
-                cursorFollowingShape.setLayoutY(mouseEvent.getSceneY());
+                cursorFollowingNetworkDevice.getImageView().setLayoutX(mouseEvent.getSceneX());
+                cursorFollowingNetworkDevice.getImageView().setLayoutY(mouseEvent.getSceneY());
             }
         });
     }
 
     private void setupWorkspaceEvents() {
         simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-            if (followingShapeExists()) {
-                setupPlacedShapeEvents(cursorFollowingShape);
-                placeFollowingShape();
-            } else if (selectedShapeExists() && !cursorAtShape(selectedShape, mouseEvent)) {
-                deselectSelectedShape();
-                selectedShape = null;
+            if (networkDeviceFollowingCursor()) {
+                makeInteractive(cursorFollowingNetworkDevice);
+                placeFollowingNetworkDevice();
             }
         });
     }
 
-    private void setupPlacedShapeEvents(Shape shape) {
+    private void makeInteractive(NetworkDevice networkDevice) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
-        shape.setOnMousePressed(mouseEvent -> {
+        networkDevice.getImageView().setOnMousePressed(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
-                if (selectedShape != null) {
-                    deselectSelectedShape();
-                }
-                cursorDistanceFromShapeTopLeft[0] = shape.getLayoutX() - mouseEvent.getSceneX();
-                cursorDistanceFromShapeTopLeft[1] = shape.getLayoutY() - mouseEvent.getSceneY();
 
-                selectedShape = shape;
-                selectedShape.setStroke(Color.BLACK);
-                selectedShape.setStrokeWidth(4);
-                selectedShape.toFront();
+                cursorDistanceFromShapeTopLeft[0] = networkDevice.getImageView().getLayoutX() - mouseEvent.getSceneX();
+                cursorDistanceFromShapeTopLeft[1] = networkDevice.getImageView().getLayoutY() - mouseEvent.getSceneY();
             } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
-                contextMenuShape = shape;
+                contextMenuNetworkDevice = networkDevice;
                 netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), mouseEvent.getScreenX(), mouseEvent.getScreenY());
             }
         });
 
-        shape.setOnMouseDragged(mouseEvent -> {
+        networkDevice.getImageView().setOnMouseDragged(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
-                shape.setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
-                shape.setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
+                networkDevice.getImageView().setLayoutX(mouseEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0]);
+                networkDevice.getImageView().setLayoutY(mouseEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1]);
             }
         });
     }
@@ -132,57 +123,27 @@ public class SimulationWorkspaceView {
 
         MenuItem deleteOption = new MenuItem("Delete");
         deleteOption.setOnAction(event -> {
-            if (contextMenuShape != null) {
-                simulationWorkspace.getChildren().remove(contextMenuShape);
-                contextMenuShape = null;
+            if (contextMenuNetworkDevice != null) {
+                simulationWorkspace.getChildren().remove(contextMenuNetworkDevice.getImageView());
+                contextMenuNetworkDevice = null;
             }
         });
         contextMenu.getItems().addAll(propertiesOption, deleteOption);
     }
 
-    private void spawn(Shape toClone) {
-        Shape shape = cloneShape(toClone);
-        shape.setOpacity(0.5);
-        cursorFollowingShape = shape;
+    private void spawn(NetworkDevice networkDevice) {
+        NetworkDevice deepCopy = networkDevice.deepCopy();
+        deepCopy.getImageView().setOpacity(0.5);
+        cursorFollowingNetworkDevice = deepCopy;
     }
 
-    private Shape cloneShape(Shape shape) {
-        if (shape instanceof Circle) {
-            Circle original = (Circle) shape;
-            return new Circle(original.getRadius() * 3, original.getFill());
-        } else if (shape instanceof Rectangle) {
-            Rectangle original = (Rectangle) shape;
-            return new Rectangle(original.getWidth() * 3, original.getHeight() * 3, original.getFill());
-        }
-        throw new IllegalArgumentException("Unsupported shape type");
+    private void placeFollowingNetworkDevice() {
+        cursorFollowingNetworkDevice.getImageView().setOpacity(1.0);
+        cursorFollowingNetworkDevice = null;
     }
 
-    private void deselectSelectedShape() {
-        selectedShape.setStrokeWidth(0);
-    }
-
-    private void placeFollowingShape() {
-        cursorFollowingShape.setOpacity(1.0);
-        cursorFollowingShape = null;
-    }
-
-    private boolean cursorAtShape(Shape shape, MouseEvent mouseEvent) {
-        if (shape != null) {
-
-            double localX = shape.sceneToLocal(mouseEvent.getSceneX(), mouseEvent.getSceneY()).getX();
-            double localY = shape.sceneToLocal(mouseEvent.getSceneX(), mouseEvent.getSceneY()).getY();
-
-            return shape.contains(localX, localY);
-        }
-        return false;
-    }
-
-    private boolean followingShapeExists() {
-        return cursorFollowingShape != null;
-    }
-
-    private boolean selectedShapeExists() {
-        return selectedShape != null && cursorFollowingShape == null;
+    private boolean networkDeviceFollowingCursor() {
+        return cursorFollowingNetworkDevice != null;
     }
 
     public void display() {
