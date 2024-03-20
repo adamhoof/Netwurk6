@@ -103,13 +103,13 @@ public class SimulationWorkspaceView {
     private void setupWorkspaceEvents() {
         simulationWorkspace.setOnMouseClicked(mouseEvent -> {
             if (followingNetworkDeviceController.isFollowing()) {
-                makeInteractive(followingNetworkDeviceController.get());
+                setupPlacedDeviceEvents(followingNetworkDeviceController.get());
                 followingNetworkDeviceController.place();
             }
         });
     }
 
-    private void makeInteractive(NetworkDevice networkDevice) {
+    private void setupPlacedDeviceEvents(NetworkDevice networkDevice) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
 
         networkDevice.setOnMousePressed(mouseEvent -> {
