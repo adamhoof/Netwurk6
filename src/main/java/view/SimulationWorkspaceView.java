@@ -56,7 +56,6 @@ public class SimulationWorkspaceView {
 
         cursorFollowingDeviceHandler = new CursorFollowingNetworkDeviceHandler();
 
-        setupWorkspaceEvents();
         setupCursorFollowingDeviceEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
@@ -93,20 +92,26 @@ public class SimulationWorkspaceView {
     }
 
     private void setupCursorFollowingDeviceEvents() {
-        simulationWorkspace.setOnMouseMoved(mouseEvent -> {
+        setupCursorFollowingDeviceMoveEvent();
+        setupCursorFollowingDeviceClickEvent();
+
+    }
+
+    private void setupCursorFollowingDeviceMoveEvent() {
+        simulationWorkspace.setOnMouseMoved(moveEvent -> {
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 if (!simulationWorkspace.getChildren().contains(cursorFollowingDeviceHandler.get())) {
                     simulationWorkspace.getChildren().add(cursorFollowingDeviceHandler.get());
                     cursorFollowingDeviceHandler.get().toBack();
                 }
-                cursorFollowingDeviceHandler.get().setLayoutX(mouseEvent.getSceneX());
-                cursorFollowingDeviceHandler.get().setLayoutY(mouseEvent.getSceneY());
+                cursorFollowingDeviceHandler.get().setLayoutX(moveEvent.getSceneX());
+                cursorFollowingDeviceHandler.get().setLayoutY(moveEvent.getSceneY());
             }
         });
     }
 
-    private void setupWorkspaceEvents() {
-        simulationWorkspace.setOnMouseClicked(mouseEvent -> {
+    private void setupCursorFollowingDeviceClickEvent() {
+        simulationWorkspace.setOnMouseClicked(clickEvent -> {
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 setupPlacedDeviceEvents(cursorFollowingDeviceHandler.get());
                 cursorFollowingDeviceHandler.place();
@@ -116,7 +121,11 @@ public class SimulationWorkspaceView {
 
     private void setupPlacedDeviceEvents(NetworkDevice networkDevice) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
+        setupPlacedDeviceClickEvent(networkDevice, cursorDistanceFromShapeTopLeft);
+        setupPlacedDeviceDragEvent(networkDevice, cursorDistanceFromShapeTopLeft);
+    }
 
+    private void setupPlacedDeviceClickEvent(NetworkDevice networkDevice, double[] cursorDistanceFromShapeTopLeft) {
         networkDevice.setOnMousePressed(clickEvent -> {
             if (isConnectionMode) {
                 if (firstSelectedDevice == null) {
@@ -137,7 +146,9 @@ public class SimulationWorkspaceView {
                 netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), clickEvent.getScreenX(), clickEvent.getScreenY());
             }
         });
+    }
 
+    private void setupPlacedDeviceDragEvent(NetworkDevice networkDevice, double[] cursorDistanceFromShapeTopLeft) {
         networkDevice.setOnMouseDragged(dragEvent -> {
             if (dragEvent.getButton() == MouseButton.PRIMARY) {
                 double newX = dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0];
