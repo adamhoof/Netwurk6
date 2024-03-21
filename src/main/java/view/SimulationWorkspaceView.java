@@ -19,7 +19,7 @@ public class SimulationWorkspaceView {
 
     private ContextMenu netwrokDeviceContextMenu;
     private NetworkDevice contextMenuNetworkDevice;
-    private FollowingNetworkDeviceController followingNetworkDeviceController;
+    private CursorFollowingNetworkDeviceHandler cursorFollowingDeviceHandler;
     private MasterController masterController;
 
     private boolean isConnectionMode = false;
@@ -54,10 +54,10 @@ public class SimulationWorkspaceView {
         netwrokDeviceContextMenu = new ContextMenu();
         generateNetworkDeviceContextMenu(netwrokDeviceContextMenu);
 
-        followingNetworkDeviceController = new FollowingNetworkDeviceController();
+        cursorFollowingDeviceHandler = new CursorFollowingNetworkDeviceHandler();
 
         setupWorkspaceEvents();
-        setupCurrentlyPlacedNetworkDeviceEvents();
+        setupCursorFollowingDeviceEvents();
 
         scene = new Scene(simulationWorkspace, 800, 600);
     }
@@ -71,8 +71,8 @@ public class SimulationWorkspaceView {
         button.setGraphic(buttonIcon);
 
         button.setOnAction(event -> {
-            if (followingNetworkDeviceController.isFollowing()) {
-                simulationWorkspace.getChildren().remove(followingNetworkDeviceController.get());
+            if (cursorFollowingDeviceHandler.isFollowing()) {
+                simulationWorkspace.getChildren().remove(cursorFollowingDeviceHandler.get());
             }
             spawn(networkDevice);
         });
@@ -92,24 +92,24 @@ public class SimulationWorkspaceView {
         return connectorButton;
     }
 
-    private void setupCurrentlyPlacedNetworkDeviceEvents() {
+    private void setupCursorFollowingDeviceEvents() {
         simulationWorkspace.setOnMouseMoved(mouseEvent -> {
-            if (followingNetworkDeviceController.isFollowing()) {
-                if (!simulationWorkspace.getChildren().contains(followingNetworkDeviceController.get())) {
-                    simulationWorkspace.getChildren().add(followingNetworkDeviceController.get());
-                    followingNetworkDeviceController.get().toBack();
+            if (cursorFollowingDeviceHandler.isFollowing()) {
+                if (!simulationWorkspace.getChildren().contains(cursorFollowingDeviceHandler.get())) {
+                    simulationWorkspace.getChildren().add(cursorFollowingDeviceHandler.get());
+                    cursorFollowingDeviceHandler.get().toBack();
                 }
-                followingNetworkDeviceController.get().setLayoutX(mouseEvent.getSceneX());
-                followingNetworkDeviceController.get().setLayoutY(mouseEvent.getSceneY());
+                cursorFollowingDeviceHandler.get().setLayoutX(mouseEvent.getSceneX());
+                cursorFollowingDeviceHandler.get().setLayoutY(mouseEvent.getSceneY());
             }
         });
     }
 
     private void setupWorkspaceEvents() {
         simulationWorkspace.setOnMouseClicked(mouseEvent -> {
-            if (followingNetworkDeviceController.isFollowing()) {
-                setupPlacedDeviceEvents(followingNetworkDeviceController.get());
-                followingNetworkDeviceController.place();
+            if (cursorFollowingDeviceHandler.isFollowing()) {
+                setupPlacedDeviceEvents(cursorFollowingDeviceHandler.get());
+                cursorFollowingDeviceHandler.place();
             }
         });
     }
@@ -171,7 +171,7 @@ public class SimulationWorkspaceView {
         deepCopy.setOpacity(0.5);
         deepCopy.setFitWidth(70);
         deepCopy.setFitHeight(70);
-        followingNetworkDeviceController.set(deepCopy);
+        cursorFollowingDeviceHandler.set(deepCopy);
     }
 
     private void drawLine(NetworkDevice startDevice, NetworkDevice endDevice) {

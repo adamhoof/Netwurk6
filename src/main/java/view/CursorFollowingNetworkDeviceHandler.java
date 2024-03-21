@@ -1,9 +1,9 @@
 package view;
 
-public class FollowingNetworkDeviceController {
+public class CursorFollowingNetworkDeviceHandler {
     NetworkDevice cursorFollowingNetworkDevice;
 
-    public FollowingNetworkDeviceController() {
+    public CursorFollowingNetworkDeviceHandler() {
     }
 
     public NetworkDevice get() {
