@@ -132,7 +132,10 @@ public class SimulationWorkspaceView {
                 if (firstSelectedDevice == null) {
                     firstSelectedDevice = networkDeviceView;
                 } else {
-                    drawLine(firstSelectedDevice, networkDeviceView);
+                    addConnectionLine(firstSelectedDevice, networkDeviceView);
+                    if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)){
+                        System.out.println("unable to propagate network device connection to model");
+                    }
                     isConnectionMode = false;
                     firstSelectedDevice = null;
                 }
@@ -186,18 +189,18 @@ public class SimulationWorkspaceView {
         cursorFollowingDeviceHandler.set(deepCopy);
     }
 
-    private void drawLine(NetworkDeviceView startDevice, NetworkDeviceView endDevice) {
-        double startX = startDevice.getLayoutX() + startDevice.getFitWidth() / 2;
-        double startY = startDevice.getLayoutY() + startDevice.getFitHeight() / 2;
-        double endX = endDevice.getLayoutX() + endDevice.getFitWidth() / 2;
-        double endY = endDevice.getLayoutY() + endDevice.getFitHeight() / 2;
+    private void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView) {
+        double startX = startDeviceView.getLayoutX() + startDeviceView.getFitWidth() / 2;
+        double startY = startDeviceView.getLayoutY() + startDeviceView.getFitHeight() / 2;
+        double endX = endDeviceView.getLayoutX() + endDeviceView.getFitWidth() / 2;
+        double endY = endDeviceView.getLayoutY() + endDeviceView.getFitHeight() / 2;
 
-        ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDevice, endDevice);
+        ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDeviceView, endDeviceView);
         simulationWorkspace.getChildren().add(connectionLine);
         connectionLine.toBack();
 
-        startDevice.addConnection(connectionLine);
-        endDevice.addConnection(connectionLine);
+        startDeviceView.addConnectionLine(connectionLine);
+        endDeviceView.addConnectionLine(connectionLine);
     }
 
     private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine line) {

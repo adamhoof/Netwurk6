@@ -33,7 +33,7 @@ public abstract class NetworkDeviceView extends ImageView implements NetworkDevi
 
     public abstract NetworkDeviceView deepCopy();
 
-    public void addConnection(ConnectionLine line) {
+    public void addConnectionLine(ConnectionLine line) {
         connections.add(line);
     }
 

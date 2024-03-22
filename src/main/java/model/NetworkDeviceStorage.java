@@ -1,12 +1,18 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class NetworkDeviceStorage {
-    List<NetworkDeviceModel> networkDeviceModels = new ArrayList<>();
+    Map<UUID, NetworkDeviceModel> networkDeviceModels = new HashMap<>();
 
     public void add(NetworkDeviceModel networkDeviceModel) {
-        networkDeviceModels.add(networkDeviceModel);
+        networkDeviceModels.put(networkDeviceModel.getUuid(), networkDeviceModel);
+    }
+
+    public NetworkDeviceModel get(UUID uuid) {
+        if (!networkDeviceModels.containsKey(uuid)) {
+            return null;
+        }
+        return networkDeviceModels.get(uuid);
     }
 }

@@ -1,9 +1,7 @@
 package common;
 
-import view.NetworkDeviceView;
-
 public interface Connection {
-    public NetworkDeviceView getStartDevice();
+    NetworkDevice getStartDevice();
 
-    public NetworkDeviceView getEndDevice();
+    NetworkDevice getEndDevice();
 }

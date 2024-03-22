@@ -32,4 +32,17 @@ public class MasterController {
         }
         deviceStorage.add(networkDeviceModel);
     }
+
+    public boolean addConnection(NetworkDevice first, NetworkDevice second) {
+        NetworkDeviceModel firstNetworkDeviceModel = deviceStorage.get(first.getUuid());
+        NetworkDeviceModel secondNetworkDeviceModel = deviceStorage.get(second.getUuid());
+
+        if (firstNetworkDeviceModel == null || secondNetworkDeviceModel == null) {
+            return false;
+        }
+        NetworkConnection networkConnection = new NetworkConnection(firstNetworkDeviceModel, secondNetworkDeviceModel);
+        firstNetworkDeviceModel.addNetworkConnection(networkConnection);
+        secondNetworkDeviceModel.addNetworkConnection(networkConnection);
+        return true;
+    }
 }
