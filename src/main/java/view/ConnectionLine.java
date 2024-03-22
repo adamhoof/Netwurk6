@@ -1,8 +1,9 @@
 package view;
 
+import common.Connection;
 import javafx.scene.shape.Line;
 
-public class ConnectionLine extends Line {
+public class ConnectionLine extends Line implements Connection {
     private final NetworkDeviceView startDevice;
     private final NetworkDeviceView endDevice;
 
