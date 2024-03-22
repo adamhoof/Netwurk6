@@ -1,16 +1,16 @@
 package view;
 
 public class CursorFollowingNetworkDeviceHandler {
-    NetworkDevice cursorFollowingNetworkDevice;
+    NetworkDeviceView cursorFollowingNetworkDevice;
 
     public CursorFollowingNetworkDeviceHandler() {
     }
 
-    public NetworkDevice get() {
+    public NetworkDeviceView get() {
         return cursorFollowingNetworkDevice;
     }
 
-    public void set(NetworkDevice cursorFollowingNetworkDevice) {
+    public void set(NetworkDeviceView cursorFollowingNetworkDevice) {
         this.cursorFollowingNetworkDevice = cursorFollowingNetworkDevice;
     }
 

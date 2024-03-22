@@ -1,4 +1,4 @@
-package view;
+package common;
 
 public enum NetworkDeviceType {
     ROUTER,

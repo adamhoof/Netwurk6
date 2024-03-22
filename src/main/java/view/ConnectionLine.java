@@ -3,20 +3,20 @@ package view;
 import javafx.scene.shape.Line;
 
 public class ConnectionLine extends Line {
-    private final NetworkDevice startDevice;
-    private final NetworkDevice endDevice;
+    private final NetworkDeviceView startDevice;
+    private final NetworkDeviceView endDevice;
 
-    public ConnectionLine(double startX, double startY, double endX, double endY, NetworkDevice startDevice, NetworkDevice endDevice) {
+    public ConnectionLine(double startX, double startY, double endX, double endY, NetworkDeviceView startDevice, NetworkDeviceView endDevice) {
         super(startX, startY, endX, endY);
         this.startDevice = startDevice;
         this.endDevice = endDevice;
     }
 
-    public NetworkDevice getStartDevice() {
+    public NetworkDeviceView getStartDevice() {
         return startDevice;
     }
 
-    public NetworkDevice getEndDevice() {
+    public NetworkDeviceView getEndDevice() {
         return endDevice;
     }
 }
