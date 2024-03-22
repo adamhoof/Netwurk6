@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import model.NetworkDeviceStorage;
 import view.SimulationWorkspaceView;
 
 public class App extends Application {
@@ -12,7 +13,7 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         SimulationWorkspaceView simulationWorkspaceView = new SimulationWorkspaceView(primaryStage);
-        MasterController masterController = new MasterController(simulationWorkspaceView);
+        MasterController masterController = new MasterController(simulationWorkspaceView, new NetworkDeviceStorage());
 
         ImageView imageView = new ImageView(new Image("logo.png"));
         primaryStage.getIcons().add(imageView.getImage());
