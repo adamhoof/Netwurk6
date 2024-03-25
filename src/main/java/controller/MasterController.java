@@ -1,6 +1,8 @@
 package controller;
 
 import common.NetworkDevice;
+import common.NetworkDeviceProperties;
+import common.NetworkDeviceType;
 import model.*;
 import view.SimulationWorkspaceView;
 
@@ -8,10 +10,13 @@ public class MasterController {
     SimulationWorkspaceView simulationWorkspaceView;
     NetworkDeviceStorage deviceStorage;
 
-    public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage) {
+    NetworksController networksController;
+
+    public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController) {
         this.simulationWorkspaceView = simulationWorkspaceView;
         this.simulationWorkspaceView.setController(this);
         this.deviceStorage = deviceStorage;
+        this.networksController = networksController;
     }
 
     public void addDevice(NetworkDevice networkDevice) {
@@ -19,6 +24,9 @@ public class MasterController {
         switch (networkDevice.getNetworkDeviceType()) {
             case ROUTER:
                 networkDeviceModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                Network network = networksController.createDefaultLanNetwork();
+                IPAddress routerIpAddress = networksController.reserveIpAddress(network);
+                ((RouterModel) networkDeviceModel).appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 break;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
