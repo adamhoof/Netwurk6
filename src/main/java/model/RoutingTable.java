@@ -1,10 +1,9 @@
 package model;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class RoutingTable {
-    private final List<RouteEntry> entries;
+    private final ArrayList<RouteEntry> entries;
 
     public RoutingTable() {
         this.entries = new ArrayList<>();
@@ -17,8 +16,7 @@ public class RoutingTable {
     public void removeEntry(RouteEntry entry) {
         entries.remove(entry);
     }
-
-    public List<RouteEntry> getEntries() {
+    public ArrayList<RouteEntry> getEntries() {
         return entries;
     }
 }
