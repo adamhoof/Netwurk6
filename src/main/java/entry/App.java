@@ -6,7 +6,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import model.NetworkDeviceStorage;
-import model.NetworksController;
+import controller.NetworksController;
 import view.SimulationWorkspaceView;
 
 public class App extends Application {
