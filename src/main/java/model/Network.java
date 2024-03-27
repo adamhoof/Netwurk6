@@ -6,12 +6,15 @@ import java.util.Map;
 public class Network {
     private final IPAddress networkIpAddress;
     private final SubnetMask subnetMask;
+
+    private final NetworkType networkType;
     Map<Long, IPAddress> usedIpAddresses = new HashMap<>();
     private IPAddress currentAvailableAddress;
 
-    public Network(IPAddress networkIpAddress, SubnetMask subnetMask) {
+    public Network(IPAddress networkIpAddress, SubnetMask subnetMask, NetworkType networkType) {
         this.networkIpAddress = networkIpAddress;
         this.subnetMask = subnetMask;
+        this.networkType = networkType;
         this.currentAvailableAddress = IPAddress.longToIPAddress(networkIpAddress.toLong() + 1);
     }
 
@@ -27,9 +30,13 @@ public class Network {
             currentAvailableAddress = IPAddress.longToIPAddress(currentAvailableAddress.toLong() + 1);
         }
 
-        // TODO Reset and search from the start if needed, or implement other logic for full subnet
+        // TODO Reset and search from the start if needed
         currentAvailableAddress = IPAddress.longToIPAddress(currentAvailableAddress.toLong() + 1);
         return null;
+    }
+
+    public NetworkType getNetworkType(){
+        return networkType;
     }
 
 
