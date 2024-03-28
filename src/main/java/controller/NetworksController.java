@@ -1,12 +1,19 @@
-package model;
+package controller;
+
+import common.NetworkDeviceType;
+import model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NetworksController {
     IPAddress defaultLanIpAddress = new IPAddress(192, 168, 1, 0);
     IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
     SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
+
+    Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
 
     ArrayList<Network> networks = new ArrayList<>();
 
@@ -33,8 +40,14 @@ public class NetworksController {
         return available;
     }
 
-    public Network createDefaultLanNetwork() {
-        Network network = new Network(getDefaultLanNetworkIpAddress(), getDefaultLanSubnetMask());
+    public LanNetwork createDefaultLanNetwork() {
+        LanNetwork network = new LanNetwork(getDefaultLanNetworkIpAddress(), getDefaultLanSubnetMask());
+        networks.add(network);
+        return network;
+    }
+
+    public WanNetwork createDefaultWanNetwork() {
+        WanNetwork network = new WanNetwork(reserveCurrentAvailableWanLinkNetworkAddress(), getDefaultWanRouterLinkSubnetMask());
         networks.add(network);
         return network;
     }
@@ -43,12 +56,41 @@ public class NetworksController {
         return network.getNextAvailableIpAddress();
     }
 
-    public IPAddress getDefaultLanNetworkIpAddress() {
-        return defaultLanIpAddress;
+    public boolean addNetworkConnection(NetworkDeviceModel first, NetworkDeviceModel second) {
+        boolean firstEmpty = !networkConnections.containsKey(first);
+        boolean secondEmpty = !networkConnections.containsKey(second);
+
+        if (!firstEmpty && first.getNetworkDeviceType() == NetworkDeviceType.PC) {
+            return false;
+        }
+        if (!secondEmpty && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
+            return false;
+        }
+
+        if (firstEmpty) {
+            networkConnections.put(first, new ArrayList<>());
+        }
+        networkConnections.get(first).add(second);
+
+        if (secondEmpty) {
+            networkConnections.put(second, new ArrayList<>());
+        }
+        networkConnections.get(second).add(first);
+
+        return true;
     }
 
-    public IPAddress getCurrentAvailableWanNetworkAddress() {
-        return currentAvailableWanNetworkAddress;
+    public void createWanLink(RouterModel first, RouterModel second) {
+        WanNetwork network = createDefaultWanNetwork();
+        IPAddress firstRouterIpAddress = reserveIpAddress(network);
+        IPAddress secondRouterIpAddress = reserveIpAddress(network);
+
+        first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
+        second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
+    }
+
+    public IPAddress getDefaultLanNetworkIpAddress() {
+        return defaultLanIpAddress;
     }
 
     public void setCurrentAvailableWanNetworkAddress(IPAddress currentAvailableWanNetworkAddress) {

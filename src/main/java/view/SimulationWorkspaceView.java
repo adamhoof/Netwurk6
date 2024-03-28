@@ -133,7 +133,7 @@ public class SimulationWorkspaceView {
                     firstSelectedDevice = networkDeviceView;
                 } else {
                     addConnectionLine(firstSelectedDevice, networkDeviceView);
-                    if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)){
+                    if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)) {
                         System.out.println("unable to propagate network device connection to model");
                     }
                     isConnectionMode = false;

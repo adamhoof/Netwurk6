@@ -24,7 +24,7 @@ public class MasterController {
         switch (networkDevice.getNetworkDeviceType()) {
             case ROUTER:
                 networkDeviceModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                Network network = networksController.createDefaultLanNetwork();
+                LanNetwork network = networksController.createDefaultLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
                 ((RouterModel) networkDeviceModel).appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 break;
@@ -48,9 +48,12 @@ public class MasterController {
         if (firstNetworkDeviceModel == null || secondNetworkDeviceModel == null) {
             return false;
         }
-        NetworkConnection networkConnection = new NetworkConnection(firstNetworkDeviceModel, secondNetworkDeviceModel);
-        firstNetworkDeviceModel.addNetworkConnection(networkConnection);
-        secondNetworkDeviceModel.addNetworkConnection(networkConnection);
+
+        if (firstNetworkDeviceModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER && secondNetworkDeviceModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            networksController.createWanLink((RouterModel) firstNetworkDeviceModel, (RouterModel) secondNetworkDeviceModel);
+        }
+
+        networksController.addNetworkConnection(firstNetworkDeviceModel, secondNetworkDeviceModel);
         return true;
     }
 }
