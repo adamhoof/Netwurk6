@@ -15,6 +15,8 @@ public class NetworksController {
 
     Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
 
+    Map<RouterModel, ArrayList<RouterModel>> routersRipConnections = new HashMap<>();
+
     ArrayList<Network> networks = new ArrayList<>();
 
     public IPAddress reserveCurrentAvailableWanLinkNetworkAddress() {
@@ -85,11 +87,25 @@ public class NetworksController {
         IPAddress firstRouterIpAddress = reserveIpAddress(network);
         IPAddress secondRouterIpAddress = reserveIpAddress(network);
 
+        first.addIpAddressInNetwork(firstRouterIpAddress, network);
+        second.addIpAddressInNetwork(secondRouterIpAddress, network);
+
         first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
         second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
 
-        first.addIpAddressInNetwork(firstRouterIpAddress, network);
-        second.addIpAddressInNetwork(secondRouterIpAddress, network);
+        addRipConnection(first, second);
+    }
+
+    public void addRipConnection(RouterModel first, RouterModel second) {
+        getRoutersRipConnections(first).add(second);
+        getRoutersRipConnections(second).add(first);
+    }
+
+    public ArrayList<RouterModel> getRoutersRipConnections(RouterModel routerModel) {
+        if (!routersRipConnections.containsKey(routerModel)){
+            routersRipConnections.put(routerModel, new ArrayList<>());
+        }
+        return routersRipConnections.get(routerModel);
     }
 
     public IPAddress getDefaultLanNetworkIpAddress() {

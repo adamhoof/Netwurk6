@@ -26,12 +26,13 @@ public class MasterController {
         NetworkDeviceModel networkDeviceModel;
         switch (networkDevice.getNetworkDeviceType()) {
             case ROUTER:
-                networkDeviceModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 LanNetwork network = networksController.createDefaultLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
-                ((RouterModel) networkDeviceModel).addIpAddressInNetwork(routerIpAddress, network);
-                ((RouterModel) networkDeviceModel).appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
-                break;
+                routerModel.addIpAddressInNetwork(routerIpAddress, network);
+                routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
+                deviceStorage.add(routerModel);
+                return;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 break;
@@ -42,24 +43,17 @@ public class MasterController {
                 System.out.println("incorrect network device");
                 return;
         }
-        deviceStorage.add(networkDeviceModel);
     }
 
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
-        NetworkDeviceModel firstNetworkDeviceModel = deviceStorage.get(first.getUuid());
-        NetworkDeviceModel secondNetworkDeviceModel = deviceStorage.get(second.getUuid());
-
-        if (firstNetworkDeviceModel == null || secondNetworkDeviceModel == null) {
-            return false;
+        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
+            RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
+            networksController.createWanLink(firstRouter, secondRouter);
         }
-
-        if (firstNetworkDeviceModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER && secondNetworkDeviceModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            networksController.createWanLink((RouterModel) firstNetworkDeviceModel, (RouterModel) secondNetworkDeviceModel);
-        }
-
-        networksController.addNetworkConnection(firstNetworkDeviceModel, secondNetworkDeviceModel);
         return true;
     }
+
     public void startSimulation() {
         simulationController.startSimulation();
     }
