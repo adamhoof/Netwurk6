@@ -25,6 +25,11 @@ public class SimulationWorkspaceView {
     private boolean isConnectionMode = false;
     private NetworkDeviceView firstSelectedDevice = null;
 
+    private final int iconSize = 32;
+    private final int imageSize = 70;
+
+    private final RouterPropertiesMenu routerPropertiesMenu = new RouterPropertiesMenu();
+
     ToolBar toolBar;
 
     public SimulationWorkspaceView(Stage stage) {
@@ -36,16 +41,17 @@ public class SimulationWorkspaceView {
         simulationWorkspace = new AnchorPane();
         toolBar = new ToolBar();
 
-        RouterView routerView = new RouterView(new Image("router.png"));
-        SwitchView switchView = new SwitchView(new Image("switch.png"));
-        PCView pcView = new PCView(new Image("server.png"));
+        RouterView routerView = new RouterView(new Image("router_image.png"));
+        SwitchView switchView = new SwitchView(new Image("switch_image.png"));
+        PCView pcView = new PCView(new Image("server_image.png"));
 
-        Button routerToolBarButton = createNetworkDeviceButton(routerView);
-        Button switchToolBarButton = createNetworkDeviceButton(switchView);
-        Button pcToolBarButton = createNetworkDeviceButton(pcView);
-        Button connectorToolBarButton = createConnectorButton(new ImageView(new Image("connector.png")));
+        Button routerToolBarButton = createNetworkDeviceButton(routerView, new Image("router_icon.png"));
+        Button switchToolBarButton = createNetworkDeviceButton(switchView, new Image("switch_icon.png"));
+        Button pcToolBarButton = createNetworkDeviceButton(pcView, new Image("server_icon.png"));
+        Button connectorToolBarButton = createConnectorButton(new ImageView(new Image("connector_icon.png")));
+        Button startSimulationToolBarButton = createStartSimulationButton(new ImageView(new Image("start_icon.png")));
 
-        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton);
+        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton, startSimulationToolBarButton);
         toolBar.toFront();
 
         simulationWorkspace.getChildren().add(toolBar);
@@ -61,12 +67,9 @@ public class SimulationWorkspaceView {
         scene = new Scene(simulationWorkspace, 800, 600);
     }
 
-    private Button createNetworkDeviceButton(NetworkDeviceView networkDeviceView) {
+    private Button createNetworkDeviceButton(NetworkDeviceView networkDeviceView, Image icon) {
         Button button = new Button(networkDeviceView.getNetworkDeviceType().toString());
-        ImageView buttonIcon = new ImageView(networkDeviceView.getImage());
-        buttonIcon.setFitHeight(40);
-        buttonIcon.setFitWidth(40);
-        buttonIcon.setPreserveRatio(true);
+        ImageView buttonIcon = new ImageView(icon);
         button.setGraphic(buttonIcon);
 
         button.setOnAction(event -> {
@@ -81,14 +84,26 @@ public class SimulationWorkspaceView {
 
     private Button createConnectorButton(ImageView icon) {
         Button connectorButton = new Button("Connector");
-        icon.setFitHeight(40);
-        icon.setFitWidth(40);
+        icon.setFitHeight(iconSize);
+        icon.setFitWidth(iconSize);
         icon.setPreserveRatio(true);
         connectorButton.setGraphic(icon);
 
         connectorButton.setOnAction(clickEvent -> isConnectionMode = true);
 
         return connectorButton;
+    }
+
+    private Button createStartSimulationButton(ImageView icon) {
+        Button startSimulationButton = new Button("Start");
+        icon.setFitHeight(iconSize);
+        icon.setFitWidth(iconSize);
+        icon.setPreserveRatio(true);
+        startSimulationButton.setGraphic(icon);
+
+        startSimulationButton.setOnAction(clickEvent -> masterController.startSimulation());
+
+        return startSimulationButton;
     }
 
     private void setupCursorFollowingDeviceEvents() {
@@ -184,8 +199,8 @@ public class SimulationWorkspaceView {
     private void spawn(NetworkDeviceView networkDeviceView) {
         NetworkDeviceView deepCopy = networkDeviceView.deepCopy();
         deepCopy.setOpacity(0.5);
-        deepCopy.setFitWidth(70);
-        deepCopy.setFitHeight(70);
+        deepCopy.setFitWidth(imageSize);
+        deepCopy.setFitHeight(imageSize);
         cursorFollowingDeviceHandler.set(deepCopy);
     }
 

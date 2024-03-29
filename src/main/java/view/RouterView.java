@@ -11,6 +11,5 @@ public class RouterView extends NetworkDeviceView {
     @Override
     public NetworkDeviceView deepCopy() {
         return new RouterView(this.getImage());
-
     }
 }

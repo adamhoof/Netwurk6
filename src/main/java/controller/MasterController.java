@@ -60,4 +60,8 @@ public class MasterController {
         networksController.addNetworkConnection(firstNetworkDeviceModel, secondNetworkDeviceModel);
         return true;
     }
+    public void startSimulation() {
+        simulationController.startSimulation();
+    }
+
 }
