@@ -87,14 +87,13 @@ public class NetworksController {
 
         first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
         second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
+
+        first.addIpAddressInNetwork(firstRouterIpAddress, network);
+        second.addIpAddressInNetwork(secondRouterIpAddress, network);
     }
 
     public IPAddress getDefaultLanNetworkIpAddress() {
         return defaultLanIpAddress;
-    }
-
-    public void setCurrentAvailableWanNetworkAddress(IPAddress currentAvailableWanNetworkAddress) {
-        this.currentAvailableWanNetworkAddress = currentAvailableWanNetworkAddress;
     }
 
     public SubnetMask getDefaultLanSubnetMask() {
@@ -105,7 +104,12 @@ public class NetworksController {
         return defaultWanRouterLinkSubnetMask;
     }
 
-    public void setDefaultWanRouterLinkSubnetMask(SubnetMask defaultWanRouterLinkSubnetMask) {
-        this.defaultWanRouterLinkSubnetMask = defaultWanRouterLinkSubnetMask;
+    public Network getSharedNetwork(RouterModel first, RouterModel second) {
+        for (Network network : networks) {
+            if (first.isInNetwork(network) && second.isInNetwork(network)) {
+                return network;
+            }
+        }
+        return null;
     }
 }

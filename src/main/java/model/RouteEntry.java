@@ -2,8 +2,8 @@ package model;
 
 public class RouteEntry {
     private final Network destinationNetwork;
-    private final IPAddress nextHop;
-    private final int hopCount;
+    private IPAddress nextHop;
+    private int hopCount;
 
     public RouteEntry(Network destinationNetwork, IPAddress nextHop, int hopCount) {
         this.destinationNetwork = destinationNetwork;
@@ -21,5 +21,13 @@ public class RouteEntry {
 
     public int getHopCount() {
         return hopCount;
+    }
+
+    public void setHopCount(int hopCount){
+        this.hopCount = hopCount;
+    }
+
+    public void setNextHop(IPAddress nextHop){
+        this.nextHop = nextHop;
     }
 }

@@ -12,11 +12,14 @@ public class MasterController {
 
     NetworksController networksController;
 
+    SimulationController simulationController;
+
     public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController) {
         this.simulationWorkspaceView = simulationWorkspaceView;
         this.simulationWorkspaceView.setController(this);
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
+        simulationController = new SimulationController(deviceStorage, networksController);
     }
 
     public void addDevice(NetworkDevice networkDevice) {
@@ -26,6 +29,7 @@ public class MasterController {
                 networkDeviceModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 LanNetwork network = networksController.createDefaultLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
+                ((RouterModel) networkDeviceModel).addIpAddressInNetwork(routerIpAddress, network);
                 ((RouterModel) networkDeviceModel).appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 break;
             case SWITCH:
