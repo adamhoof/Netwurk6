@@ -1,7 +1,5 @@
 package view;
 
-import common.NetworkDeviceProperties;
-import common.RouterProperties;
 import controller.MasterController;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -15,12 +13,8 @@ public class SimulationWorkspaceView {
     private final Stage stage;
     private Scene scene;
     private AnchorPane simulationWorkspace;
-
-    private ContextMenu netwrokDeviceContextMenu;
-    private NetworkDeviceView contextMenuNetworkDevice;
     private CursorFollowingNetworkDeviceHandler cursorFollowingDeviceHandler;
     private MasterController masterController;
-
     private boolean isConnectionMode = false;
     private NetworkDeviceView firstSelectedDevice = null;
 
@@ -28,8 +22,6 @@ public class SimulationWorkspaceView {
     private final int imageSize = 70;
 
     private Tooltip labelsTooltip = new Tooltip();
-
-    private final RouterPropertiesMenu routerPropertiesMenu = new RouterPropertiesMenu();
 
     ToolBar toolBar;
 
@@ -57,9 +49,6 @@ public class SimulationWorkspaceView {
 
         simulationWorkspace.getChildren().add(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
-
-        netwrokDeviceContextMenu = new ContextMenu();
-        generateNetworkDeviceContextMenu(netwrokDeviceContextMenu);
 
         cursorFollowingDeviceHandler = new CursorFollowingNetworkDeviceHandler();
 
@@ -171,9 +160,6 @@ public class SimulationWorkspaceView {
             if (clickEvent.getButton() == MouseButton.PRIMARY) {
                 cursorDistanceFromShapeTopLeft[0] = networkDeviceView.getLayoutX() - clickEvent.getSceneX();
                 cursorDistanceFromShapeTopLeft[1] = networkDeviceView.getLayoutY() - clickEvent.getSceneY();
-            } else if (clickEvent.getButton() == MouseButton.SECONDARY) {
-                contextMenuNetworkDevice = networkDeviceView;
-                netwrokDeviceContextMenu.show(simulationWorkspace.getScene().getWindow(), clickEvent.getScreenX(), clickEvent.getScreenY());
             }
         });
     }
@@ -192,33 +178,6 @@ public class SimulationWorkspaceView {
                 }
             }
         });
-    }
-
-    private void generateNetworkDeviceContextMenu(ContextMenu contextMenu) {
-        MenuItem propertiesOption = new MenuItem("Properties");
-
-        propertiesOption.setOnAction(selectEvent -> {
-            if (contextMenuNetworkDevice != null) {
-                NetworkDeviceProperties networkDeviceProperties = masterController.getProperties(contextMenuNetworkDevice);
-                switch (contextMenuNetworkDevice.getNetworkDeviceType()) {
-                    case ROUTER:
-                        routerPropertiesMenu.show((RouterProperties) networkDeviceProperties);
-                    case SWITCH:
-                    case PC:
-                    default:
-                        System.out.println("Invalid network device type");
-                }
-            }
-        });
-
-        MenuItem deleteOption = new MenuItem("Delete");
-        deleteOption.setOnAction(event -> {
-            if (contextMenuNetworkDevice != null) {
-                simulationWorkspace.getChildren().remove(contextMenuNetworkDevice);
-                contextMenuNetworkDevice = null;
-            }
-        });
-        contextMenu.getItems().addAll(propertiesOption, deleteOption);
     }
 
     private void spawn(NetworkDeviceView networkDeviceView) {
