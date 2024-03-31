@@ -1,11 +1,10 @@
 package view;
 
+import common.NetworkDeviceProperties;
+import common.RouterProperties;
 import controller.MasterController;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -27,6 +26,8 @@ public class SimulationWorkspaceView {
 
     private final int iconSize = 32;
     private final int imageSize = 70;
+
+    private Tooltip labelsTooltip = new Tooltip();
 
     private final RouterPropertiesMenu routerPropertiesMenu = new RouterPropertiesMenu();
 
@@ -139,6 +140,16 @@ public class SimulationWorkspaceView {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
         setupPlacedDeviceClickEvent(networkDeviceView, cursorDistanceFromShapeTopLeft);
         setupPlacedDeviceDragEvent(networkDeviceView, cursorDistanceFromShapeTopLeft);
+        setupPlacedDeviceHoverEvent(networkDeviceView);
+    }
+
+    private void setupPlacedDeviceHoverEvent(NetworkDeviceView networkDeviceView) {
+        networkDeviceView.setOnMouseEntered(hoverEntryEvent -> {
+            System.out.println("hover");
+        });
+        networkDeviceView.setOnMouseExited(hoverExitEvent -> {
+            System.out.println("hide");
+        });
     }
 
     private void setupPlacedDeviceClickEvent(NetworkDeviceView networkDeviceView, double[] cursorDistanceFromShapeTopLeft) {
@@ -186,6 +197,20 @@ public class SimulationWorkspaceView {
     private void generateNetworkDeviceContextMenu(ContextMenu contextMenu) {
         MenuItem propertiesOption = new MenuItem("Properties");
 
+        propertiesOption.setOnAction(selectEvent -> {
+            if (contextMenuNetworkDevice != null) {
+                NetworkDeviceProperties networkDeviceProperties = masterController.getProperties(contextMenuNetworkDevice);
+                switch (contextMenuNetworkDevice.getNetworkDeviceType()) {
+                    case ROUTER:
+                        routerPropertiesMenu.show((RouterProperties) networkDeviceProperties);
+                    case SWITCH:
+                    case PC:
+                    default:
+                        System.out.println("Invalid network device type");
+                }
+            }
+        });
+
         MenuItem deleteOption = new MenuItem("Delete");
         deleteOption.setOnAction(event -> {
             if (contextMenuNetworkDevice != null) {
@@ -199,16 +224,16 @@ public class SimulationWorkspaceView {
     private void spawn(NetworkDeviceView networkDeviceView) {
         NetworkDeviceView deepCopy = networkDeviceView.deepCopy();
         deepCopy.setOpacity(0.5);
-        deepCopy.setFitWidth(imageSize);
-        deepCopy.setFitHeight(imageSize);
+        deepCopy.setImageViewFitWidth(imageSize);
+        deepCopy.setImageViewFitHeight(imageSize);
         cursorFollowingDeviceHandler.set(deepCopy);
     }
 
     private void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView) {
-        double startX = startDeviceView.getLayoutX() + startDeviceView.getFitWidth() / 2;
-        double startY = startDeviceView.getLayoutY() + startDeviceView.getFitHeight() / 2;
-        double endX = endDeviceView.getLayoutX() + endDeviceView.getFitWidth() / 2;
-        double endY = endDeviceView.getLayoutY() + endDeviceView.getFitHeight() / 2;
+        double startX = startDeviceView.getLayoutX() + startDeviceView.getWidth() / 2;
+        double startY = startDeviceView.getLayoutY() + startDeviceView.getHeight() / 2;
+        double endX = endDeviceView.getLayoutX() + endDeviceView.getWidth() / 2;
+        double endY = endDeviceView.getLayoutY() + endDeviceView.getHeight() / 2;
 
         ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDeviceView, endDeviceView);
         simulationWorkspace.getChildren().add(connectionLine);
@@ -221,13 +246,13 @@ public class SimulationWorkspaceView {
     private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine line) {
 
         if (networkDeviceView.equals(line.getStartDevice())) {
-            line.setStartX(networkDeviceView.getLayoutX() + networkDeviceView.getFitWidth() / 2);
-            line.setStartY(networkDeviceView.getLayoutY() + networkDeviceView.getFitHeight() / 2);
+            line.setStartX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
+            line.setStartY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
         }
 
         if (networkDeviceView.equals(line.getEndDevice())) {
-            line.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getFitWidth() / 2);
-            line.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getFitHeight() / 2);
+            line.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
+            line.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
         }
     }
 

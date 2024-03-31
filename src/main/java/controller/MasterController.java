@@ -58,4 +58,21 @@ public class MasterController {
         simulationController.startSimulation();
     }
 
+
+    public NetworkDeviceProperties getProperties(NetworkDevice networkDevice) {
+        NetworkDeviceModel networkDeviceModel = deviceStorage.get(networkDevice.getUuid());
+        switch (networkDeviceModel.getNetworkDeviceType()) {
+            case ROUTER:
+               /* String IPAddress = ((RouterModel) networkDeviceModel) != null ? ((RouterModel) networkDeviceModel).getIpAddress().toString() : "";
+                String MACAddress = networkDeviceModel.getMacAddress() != null ? networkDeviceModel.getMacAddress().toString() : "";
+                return new RouterProperties(IPAddress, MACAddress);*/
+            case SWITCH:
+                break;
+            case PC:
+                break;
+            default:
+                break;
+        }
+        return null;
+    }
 }

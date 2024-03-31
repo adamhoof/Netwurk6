@@ -10,6 +10,6 @@ public class PCView extends NetworkDeviceView {
 
     @Override
     public NetworkDeviceView deepCopy(){
-        return new PCView(this.getImage());
+        return new PCView(this.getImageView().getImage());
     }
 }

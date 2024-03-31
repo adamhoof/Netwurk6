@@ -4,22 +4,29 @@ import common.NetworkDevice;
 import common.NetworkDeviceType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class NetworkDeviceView extends ImageView implements NetworkDevice {
+public abstract class NetworkDeviceView extends StackPane implements NetworkDevice {
     private final NetworkDeviceType networkDeviceType;
 
+    private ArrayList<String> labels;
+    private ImageView imageView;
+
     private final UUID uuid;
+
 
     private final List<ConnectionLine> connections = new ArrayList<>();
 
     public NetworkDeviceView(NetworkDeviceType networkDeviceType, Image image) {
-        super(image);
+        this.labels = new ArrayList<>();
+        this.imageView = new ImageView(image);
         this.networkDeviceType = networkDeviceType;
         this.uuid = UUID.randomUUID();
+        this.getChildren().addAll(imageView);
     }
 
     public NetworkDeviceType getNetworkDeviceType() {
@@ -35,6 +42,18 @@ public abstract class NetworkDeviceView extends ImageView implements NetworkDevi
 
     public void addConnectionLine(ConnectionLine line) {
         connections.add(line);
+    }
+
+    public ImageView getImageView() {
+        return imageView;
+    }
+
+    public void setImageViewFitWidth(int width) {
+        imageView.setFitWidth(width);
+    }
+
+    public void setImageViewFitHeight(int height) {
+        imageView.setFitWidth(height);
     }
 
     public List<ConnectionLine> getConnections() {

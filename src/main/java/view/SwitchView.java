@@ -10,7 +10,7 @@ public class SwitchView extends NetworkDeviceView {
 
     @Override
     public NetworkDeviceView deepCopy() {
-        return new SwitchView(this.getImage());
+        return new SwitchView(this.getImageView().getImage());
     }
 
 }

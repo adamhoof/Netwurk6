@@ -4,4 +4,5 @@ module cz.cvut.fel.pjv.hofmaad {
     exports model;
     exports controller;
     exports common;
+    exports view;
 }

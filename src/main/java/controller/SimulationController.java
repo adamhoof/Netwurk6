@@ -15,6 +15,8 @@ public class SimulationController {
 
     private final NetworksController networksController;
 
+    private boolean simulationRunning = false;
+
     public SimulationController(NetworkDeviceStorage storage, NetworksController networksController) {
         this.threadPool = Executors.newFixedThreadPool(50);
         this.storage = storage;
@@ -22,7 +24,9 @@ public class SimulationController {
     }
 
     public void startSimulation() {
-
+        simulationRunning = true;
+        startRip();
+        //TODO THREADS
     }
 
     public void stopSimulation() {
