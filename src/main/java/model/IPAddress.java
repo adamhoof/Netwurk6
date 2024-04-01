@@ -58,9 +58,14 @@ public class IPAddress {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
+        int counter = 0;
         for (int octet : octets) {
-            stringBuilder.append(octet).append(".");
+            stringBuilder.append(octet);
+            counter++;
+            if (counter < octets.length){
+                stringBuilder.append(".");
+            }
         }
-        return stringBuilder.toString();
+        return stringBuilder.toString().stripTrailing();
     }
 }
