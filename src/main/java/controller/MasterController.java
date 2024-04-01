@@ -56,14 +56,18 @@ public class MasterController {
     }
 
     public Map<String, String> getLabelsForConnection(NetworkDevice first, NetworkDevice second) {
-        Network network = networksController.getSharedNetwork(deviceStorage.getRouterModel(first.getUuid()), deviceStorage.getRouterModel(second.getUuid()));
-        if (network == null) {
-            return null;
-        }
         Map<String, String> labels = new HashMap<>();
-        labels.put("Middle", network.getNetworkIpAddress().toString());
-        labels.put("Start", "." + deviceStorage.getRouterModel(first.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
-        labels.put("End", "." + deviceStorage.getRouterModel(second.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
+        labels.put("Middle", "");
+        labels.put("Start", "");
+        labels.put("End", "");
+        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            Network network = networksController.getSharedNetwork(deviceStorage.getRouterModel(first.getUuid()), deviceStorage.getRouterModel(second.getUuid()));
+            if (network != null) {
+                labels.put("Middle", network.getNetworkIpAddress().toString());
+                labels.put("Start", "." + deviceStorage.getRouterModel(first.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
+                labels.put("End", "." + deviceStorage.getRouterModel(second.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
+            }
+        }
         return labels;
     }
 

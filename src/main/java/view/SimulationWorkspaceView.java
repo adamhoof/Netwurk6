@@ -163,9 +163,8 @@ public class SimulationWorkspaceView {
                         System.out.println("unable to propagate network device connection to model");
                     }
                     Map<String, String> labels = masterController.getLabelsForConnection(firstSelectedDevice, networkDeviceView);
-                    if (labels != null) {
-                        addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
-                    }
+                    addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
+
                     isConnectionMode = false;
                     firstSelectedDevice = null;
                 }
