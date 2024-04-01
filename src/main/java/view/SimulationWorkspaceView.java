@@ -139,8 +139,9 @@ public class SimulationWorkspaceView {
 
     private void setupPlacedDeviceHoverEvent(NetworkDeviceView networkDeviceView) {
         networkDeviceView.setOnMouseEntered(hoverEnterEvent -> {
-            String deviceInfo = "Device Info: " + networkDeviceView.getNetworkDeviceType().toString();
-            updateTooltipContent(deviceInfo);
+            String stringBuilder = "Device type: " + networkDeviceView.getNetworkDeviceType().toString() + "\n" +
+                    "Networks: " + "\n" + masterController.getDeviceConfigurations(networkDeviceView);
+            updateTooltipContent(stringBuilder);
 
             Point2D p = networkDeviceView.localToScreen(networkDeviceView.getLayoutBounds().getMaxX(), networkDeviceView.getLayoutBounds().getMaxY());
             labelsTooltip.show(networkDeviceView, p.getX(), p.getY());

@@ -1,7 +1,6 @@
 package controller;
 
 import common.NetworkDevice;
-import common.NetworkDeviceProperties;
 import common.NetworkDeviceType;
 import model.*;
 import view.SimulationWorkspaceView;
@@ -52,6 +51,17 @@ public class MasterController {
             networksController.createWanLink(firstRouter, secondRouter);
         }
         return true;
+    }
+
+    public String getDeviceConfigurations(NetworkDevice networkDevice) {
+        StringBuilder configuration = new StringBuilder();
+        if (networkDevice.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            RouterModel routerModel = deviceStorage.getRouterModel(networkDevice.getUuid());
+            for (RouterModel router : networksController.getRoutersRipConnections(routerModel)) {
+                configuration.append(routerModel.ipAddressInNetwork(networksController.getSharedNetwork(router, routerModel))).append("\n");
+            }
+        }
+        return configuration.toString();
     }
 
     public void startSimulation() {

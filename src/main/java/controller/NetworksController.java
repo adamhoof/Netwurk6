@@ -8,16 +8,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class NetworksController {
-    IPAddress defaultLanIpAddress = new IPAddress(192, 168, 1, 0);
-    IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
-    SubnetMask defaultLanSubnetMask = new SubnetMask(24);
-    SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
+    private final IPAddress defaultLanIpAddress = new IPAddress(192, 168, 1, 0);
+    private IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
+    private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
+    private final SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
 
-    Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
+    private final Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
 
-    Map<RouterModel, ArrayList<RouterModel>> routersRipConnections = new HashMap<>();
+    private final Map<RouterModel, ArrayList<RouterModel>> routersRipConnections = new HashMap<>();
 
-    ArrayList<Network> networks = new ArrayList<>();
+    private final ArrayList<Network> networks = new ArrayList<>();
 
     public IPAddress reserveCurrentAvailableWanLinkNetworkAddress() {
         //TODO check if we are out of increments in relevant octet

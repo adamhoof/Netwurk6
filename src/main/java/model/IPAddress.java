@@ -54,4 +54,13 @@ public class IPAddress {
     public int[] getOctets() {
         return octets;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int octet : octets) {
+            stringBuilder.append(octet).append(".");
+        }
+        return stringBuilder.toString();
+    }
 }
