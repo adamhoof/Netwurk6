@@ -25,6 +25,9 @@ public class RouterModel extends NetworkDeviceModel {
     }
 
     private void processReceivedEntry(RouteEntry receivedEntry, IPAddress sourceIPAddress) {
+        if (receivedEntry.getDestinationNetwork().getNetworkType()==NetworkType.LAN){
+            return;
+        }
         boolean routeExists = false;
         for (RouteEntry existingEntry : routingTable.getEntries()) {
             if (existingEntry.getDestinationNetwork().equals(receivedEntry.getDestinationNetwork())) {
