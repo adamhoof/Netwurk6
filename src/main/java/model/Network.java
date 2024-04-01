@@ -39,6 +39,10 @@ public class Network {
         return networkType;
     }
 
+    public IPAddress getNetworkIpAddress(){
+        return networkIpAddress;
+    }
+
 
     private long getBroadcastAddressLong() {
         long networkAddressLong = networkIpAddress.toLong();

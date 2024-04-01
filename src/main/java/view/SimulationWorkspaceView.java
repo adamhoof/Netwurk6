@@ -139,9 +139,9 @@ public class SimulationWorkspaceView {
 
     private void setupPlacedDeviceHoverEvent(NetworkDeviceView networkDeviceView) {
         networkDeviceView.setOnMouseEntered(hoverEnterEvent -> {
-            String stringBuilder = "Device type: " + networkDeviceView.getNetworkDeviceType().toString() + "\n" +
-                    "Networks: " + "\n" + masterController.getDeviceConfigurations(networkDeviceView);
-            updateTooltipContent(stringBuilder);
+            String string = "Device type: " + networkDeviceView.getNetworkDeviceType().toString() + "\n" +
+                    "Routing table: " + "\n" + masterController.getDeviceConfigurations(networkDeviceView);
+            updateTooltipContent(string);
 
             Point2D p = networkDeviceView.localToScreen(networkDeviceView.getLayoutBounds().getMaxX(), networkDeviceView.getLayoutBounds().getMaxY());
             labelsTooltip.show(networkDeviceView, p.getX(), p.getY());
@@ -229,6 +229,7 @@ public class SimulationWorkspaceView {
 
     private void initializeTooltip() {
         labelsTooltip.setAutoHide(true);
+        labelsTooltip.setStyle("-fx-font-family: 'monospace';");
     }
 
     private void updateTooltipContent(String content) {

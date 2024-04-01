@@ -47,7 +47,7 @@ public class RouterModel extends NetworkDeviceModel {
         }
     }
 
-    public IPAddress ipAddressInNetwork(Network network) {
+    public IPAddress getIpAddressInNetwork(Network network) {
         return ipAddressInNetwork.get(network);
     }
 

@@ -45,7 +45,7 @@ public class SimulationController {
             for (RouterModel connectedRouter : networksController.getRoutersRipConnections(router)) {
                 Network sharedNetwork = networksController.getSharedNetwork(router, connectedRouter);
                 if (sharedNetwork != null) {
-                    connectedRouter.receiveRoutingTable(router.getRoutingTable(), router.ipAddressInNetwork(sharedNetwork));
+                    connectedRouter.receiveRoutingTable(router.getRoutingTable(), router.getIpAddressInNetwork(sharedNetwork));
                 }
             }
         }

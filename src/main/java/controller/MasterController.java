@@ -56,9 +56,15 @@ public class MasterController {
     public String getDeviceConfigurations(NetworkDevice networkDevice) {
         StringBuilder configuration = new StringBuilder();
         if (networkDevice.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            configuration.append(String.format("%-15s | %-15s | %-8s | %-18s\n", "Dst network", "Next hop", "Hop cnt", "IP in Dst network"));
             RouterModel routerModel = deviceStorage.getRouterModel(networkDevice.getUuid());
-            for (RouterModel router : networksController.getRoutersRipConnections(routerModel)) {
-                configuration.append(routerModel.ipAddressInNetwork(networksController.getSharedNetwork(router, routerModel))).append("\n");
+            for (RouteEntry routeEntry : routerModel.getRoutingTable().getEntries()) {
+                configuration.append(String.format("%-15s | %-15s | %-8s | %-18s\n",
+                        routeEntry.getDestinationNetwork().getNetworkIpAddress(),
+                        routeEntry.getNextHop(),
+                        routeEntry.getHopCount(),
+                        routerModel.getIpAddressInNetwork(routeEntry.getDestinationNetwork())
+                ));
             }
         }
         return configuration.toString();
