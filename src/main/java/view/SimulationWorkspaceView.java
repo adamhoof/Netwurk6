@@ -11,6 +11,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import java.util.Map;
 
 public class SimulationWorkspaceView {
     private final Stage stage;
@@ -158,9 +159,12 @@ public class SimulationWorkspaceView {
                 if (firstSelectedDevice == null) {
                     firstSelectedDevice = networkDeviceView;
                 } else {
-                    addConnectionLine(firstSelectedDevice, networkDeviceView);
                     if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)) {
                         System.out.println("unable to propagate network device connection to model");
+                    }
+                    Map<String, String> labels = masterController.getLabelsForConnection(firstSelectedDevice, networkDeviceView);
+                    if (labels != null) {
+                        addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
                     }
                     isConnectionMode = false;
                     firstSelectedDevice = null;
@@ -200,31 +204,60 @@ public class SimulationWorkspaceView {
         cursorFollowingDeviceHandler.set(deepCopy);
     }
 
-    private void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView) {
+    private void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView, String middleLabel, String startLabel, String endLabel) {
         double startX = startDeviceView.getLayoutX() + startDeviceView.getWidth() / 2;
         double startY = startDeviceView.getLayoutY() + startDeviceView.getHeight() / 2;
         double endX = endDeviceView.getLayoutX() + endDeviceView.getWidth() / 2;
         double endY = endDeviceView.getLayoutY() + endDeviceView.getHeight() / 2;
 
-        ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDeviceView, endDeviceView);
-        simulationWorkspace.getChildren().add(connectionLine);
+        ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDeviceView, endDeviceView, middleLabel, startLabel, endLabel);
+
+        double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
+        double centerY = (connectionLine.getStartY() + connectionLine.getEndY()) / 2;
+
+        double thirdXFromStart = startX + (endX - startX) / 5;
+        double thirdYFromStart = startY + (endY - startY) / 5;
+        double thirdXFromEnd = endX - (endX - startX) / 5;
+        double thirdYFromEnd = endY - (endY - startY) / 5;
+
+        connectionLine.updateLabelPosition(connectionLine.getMiddleLabel(), centerX, centerY);
+        connectionLine.updateLabelPosition(connectionLine.getStartLabel(), thirdXFromStart, thirdYFromStart);
+        connectionLine.updateLabelPosition(connectionLine.getEndLabel(), thirdXFromEnd, thirdYFromEnd);
+        simulationWorkspace.getChildren().addAll(connectionLine, connectionLine.getMiddleLabel(), connectionLine.getStartLabel(), connectionLine.getEndLabel());
         connectionLine.toBack();
 
         startDeviceView.addConnectionLine(connectionLine);
         endDeviceView.addConnectionLine(connectionLine);
     }
 
-    private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine line) {
+    private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine connectionLine) {
 
-        if (networkDeviceView.equals(line.getStartDevice())) {
-            line.setStartX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
-            line.setStartY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
+        if (networkDeviceView.equals(connectionLine.getStartDevice())) {
+            connectionLine.setStartX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
+            connectionLine.setStartY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
         }
 
-        if (networkDeviceView.equals(line.getEndDevice())) {
-            line.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
-            line.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
+        if (networkDeviceView.equals(connectionLine.getEndDevice())) {
+            connectionLine.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
+            connectionLine.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
         }
+
+        double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
+        double centerY = (connectionLine.getStartY() + connectionLine.getEndY()) / 2;
+
+        double startX = connectionLine.getStartDevice().getLayoutX() + connectionLine.getStartDevice().getWidth() / 2;
+        double startY = connectionLine.getStartDevice().getLayoutY() + connectionLine.getStartDevice().getHeight() / 2;
+        double endX = connectionLine.getEndDevice().getLayoutX() + connectionLine.getEndDevice().getWidth() / 2;
+        double endY = connectionLine.getEndDevice().getLayoutY() + connectionLine.getEndDevice().getHeight() / 2;
+
+        double thirdXFromStart = startX + (endX - startX) / 5;
+        double thirdYFromStart = startY + (endY - startY) / 5;
+        double thirdXFromEnd = endX - (endX - startX) / 5;
+        double thirdYFromEnd = endY - (endY - startY) / 5;
+
+        connectionLine.updateLabelPosition(connectionLine.getMiddleLabel(), centerX, centerY);
+        connectionLine.updateLabelPosition(connectionLine.getStartLabel(), thirdXFromStart, thirdYFromStart);
+        connectionLine.updateLabelPosition(connectionLine.getEndLabel(), thirdXFromEnd, thirdYFromEnd);
     }
 
     private void initializeTooltip() {

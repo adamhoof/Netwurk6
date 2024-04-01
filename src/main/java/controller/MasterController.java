@@ -4,6 +4,8 @@ import common.NetworkDevice;
 import common.NetworkDeviceType;
 import model.*;
 import view.SimulationWorkspaceView;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MasterController {
     SimulationWorkspaceView simulationWorkspaceView;
@@ -51,6 +53,18 @@ public class MasterController {
             networksController.createWanLink(firstRouter, secondRouter);
         }
         return true;
+    }
+
+    public Map<String, String> getLabelsForConnection(NetworkDevice first, NetworkDevice second) {
+        Network network = networksController.getSharedNetwork(deviceStorage.getRouterModel(first.getUuid()), deviceStorage.getRouterModel(second.getUuid()));
+        if (network == null) {
+            return null;
+        }
+        Map<String, String> labels = new HashMap<>();
+        labels.put("Middle", network.getNetworkIpAddress().toString());
+        labels.put("Start", "." + deviceStorage.getRouterModel(first.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
+        labels.put("End", "." + deviceStorage.getRouterModel(second.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
+        return labels;
     }
 
     public String getDeviceConfigurations(NetworkDevice networkDevice) {
