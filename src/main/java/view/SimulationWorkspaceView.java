@@ -1,8 +1,11 @@
 package view;
 
 import controller.MasterController;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -21,7 +24,7 @@ public class SimulationWorkspaceView {
     private final int iconSize = 32;
     private final int imageSize = 70;
 
-    private Tooltip labelsTooltip = new Tooltip();
+    private final Tooltip labelsTooltip = new Tooltip();
 
     ToolBar toolBar;
 
@@ -53,6 +56,8 @@ public class SimulationWorkspaceView {
         cursorFollowingDeviceHandler = new CursorFollowingNetworkDeviceHandler();
 
         setupCursorFollowingDeviceEvents();
+
+        initializeTooltip();
 
         scene = new Scene(simulationWorkspace, 800, 600);
     }
@@ -133,11 +138,16 @@ public class SimulationWorkspaceView {
     }
 
     private void setupPlacedDeviceHoverEvent(NetworkDeviceView networkDeviceView) {
-        networkDeviceView.setOnMouseEntered(hoverEntryEvent -> {
-            System.out.println("hover");
+        networkDeviceView.setOnMouseEntered(hoverEnterEvent -> {
+            String deviceInfo = "Device Info: " + networkDeviceView.getNetworkDeviceType().toString();
+            updateTooltipContent(deviceInfo);
+
+            Point2D p = networkDeviceView.localToScreen(networkDeviceView.getLayoutBounds().getMaxX(), networkDeviceView.getLayoutBounds().getMaxY());
+            labelsTooltip.show(networkDeviceView, p.getX(), p.getY());
         });
-        networkDeviceView.setOnMouseExited(hoverExitEvent -> {
-            System.out.println("hide");
+
+        networkDeviceView.setOnMouseExited(hoverExitedEvent -> {
+            labelsTooltip.hide();
         });
     }
 
@@ -166,6 +176,7 @@ public class SimulationWorkspaceView {
 
     private void setupPlacedDeviceDragEvent(NetworkDeviceView networkDeviceView, double[] cursorDistanceFromShapeTopLeft) {
         networkDeviceView.setOnMouseDragged(dragEvent -> {
+            labelsTooltip.hide();
             if (dragEvent.getButton() == MouseButton.PRIMARY) {
                 double newX = dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0];
                 double newY = dragEvent.getSceneY() + cursorDistanceFromShapeTopLeft[1];
@@ -213,6 +224,14 @@ public class SimulationWorkspaceView {
             line.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
             line.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
         }
+    }
+
+    private void initializeTooltip() {
+        labelsTooltip.setAutoHide(true);
+    }
+
+    private void updateTooltipContent(String content) {
+        labelsTooltip.setText(content);
     }
 
     public void display() {
