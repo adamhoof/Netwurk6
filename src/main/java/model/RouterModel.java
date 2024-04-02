@@ -1,7 +1,9 @@
 package model;
 
 import common.NetworkDeviceType;
+import javafx.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -9,7 +11,10 @@ import java.util.UUID;
 public class RouterModel extends NetworkDeviceModel {
     private final RoutingTable routingTable;
 
-    private final Map<Network, IPAddress> ipAddressInNetwork = new HashMap<>();
+    private final IPAddress currentAvailableLanNetworkIp = new IPAddress(192, 168, 1, 0);
+    private SubnetMask defaultLanSubnetMask = new SubnetMask(24);
+    private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
+    private final Map<Network, RouterInterface> routerInterfaces = new HashMap<>();
 
     public RouterModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER);
@@ -25,7 +30,7 @@ public class RouterModel extends NetworkDeviceModel {
     }
 
     private void processReceivedEntry(RouteEntry receivedEntry, IPAddress sourceIPAddress) {
-        if (receivedEntry.getDestinationNetwork().getNetworkType()==NetworkType.LAN){
+        if (receivedEntry.getDestinationNetwork().getNetworkType() == NetworkType.LAN) {
             return;
         }
         boolean routeExists = false;
@@ -50,15 +55,48 @@ public class RouterModel extends NetworkDeviceModel {
         }
     }
 
+    public LanNetwork createLanNetwork() {
+        IPAddress networkIp = new IPAddress(currentAvailableLanNetworkIp);
+        currentAvailableLanNetworkIp.incrementOctet(3, 1);
+
+        LanNetwork lanNetwork = new LanNetwork(networkIp, defaultLanSubnetMask);
+        lanNetworks.add(lanNetwork);
+
+        IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
+        RouterInterface routerInterface = new RouterInterface(interfaceIp, new MACAddress(UUID.randomUUID().toString()));
+        routerInterfaces.put(lanNetwork, routerInterface);
+
+        return lanNetwork;
+    }
+
+    public ArrayList<LanNetwork> getLanNetworks() {
+        return lanNetworks;
+    }
+
     public IPAddress getIpAddressInNetwork(Network network) {
-        return ipAddressInNetwork.get(network);
+        if (!routerInterfaces.containsKey(network)) {
+            return new IPAddress(0, 0, 0, 0);
+        }
+        return routerInterfaces.get(network).ipAddress;
     }
 
     public boolean isInNetwork(Network network) {
-        return ipAddressInNetwork.get(network) != null;
+        return routerInterfaces.get(network) != null;
     }
 
-    public void addIpAddressInNetwork(IPAddress ipAddress, Network network) {
-        ipAddressInNetwork.put(network, ipAddress);
+    public void addRouterInterface(RouterInterface routerInterface, Network network) {
+        routerInterfaces.put(network, routerInterface);
+    }
+
+    public Map<Network, RouterInterface> getRouterInterfaces() {
+        return routerInterfaces;
+    }
+
+    public IPAddress getCurrentAvailableLanNetworkIp() {
+        return currentAvailableLanNetworkIp;
+    }
+
+    public Pair<LanNetwork, IPAddress> getDirectConnectionLan() {
+        return new Pair<>(lanNetworks.getFirst(), routerInterfaces.get(lanNetworks.getFirst()).ipAddress);
     }
 }

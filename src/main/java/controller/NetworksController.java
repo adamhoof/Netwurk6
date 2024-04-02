@@ -6,11 +6,10 @@ import model.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class NetworksController {
-    private final IPAddress defaultLanIpAddress = new IPAddress(192, 168, 1, 0);
     private IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
-    private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
 
     private final Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
@@ -40,12 +39,6 @@ public class NetworksController {
         }
         currentAvailableWanNetworkAddress.incrementOctet(octetToIncrement, incrementBy);
         return available;
-    }
-
-    public LanNetwork createDefaultLanNetwork() {
-        LanNetwork network = new LanNetwork(getDefaultLanNetworkIpAddress(), getDefaultLanSubnetMask());
-        networks.add(network);
-        return network;
     }
 
     public WanNetwork createDefaultWanNetwork() {
@@ -87,8 +80,8 @@ public class NetworksController {
         IPAddress firstRouterIpAddress = reserveIpAddress(network);
         IPAddress secondRouterIpAddress = reserveIpAddress(network);
 
-        first.addIpAddressInNetwork(firstRouterIpAddress, network);
-        second.addIpAddressInNetwork(secondRouterIpAddress, network);
+        first.addRouterInterface(new RouterInterface(firstRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
+        second.addRouterInterface(new RouterInterface(secondRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
 
         first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
         second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
@@ -102,20 +95,17 @@ public class NetworksController {
     }
 
     public ArrayList<RouterModel> getRoutersRipConnections(RouterModel routerModel) {
-        if (!routersRipConnections.containsKey(routerModel)){
+        if (!routersRipConnections.containsKey(routerModel)) {
             routersRipConnections.put(routerModel, new ArrayList<>());
         }
         return routersRipConnections.get(routerModel);
     }
 
-    public IPAddress getDefaultLanNetworkIpAddress() {
-        return defaultLanIpAddress;
+    public void connectPcToNetwork(PCModel pcModel, Network network, IPAddress defaultGateway) {
+        IPAddress ipAddress = reserveIpAddress(network);
+        network.addDevice(pcModel);
+        pcModel.connectToNetwork(network, ipAddress, defaultGateway);
     }
-
-    public SubnetMask getDefaultLanSubnetMask() {
-        return defaultLanSubnetMask;
-    }
-
     public SubnetMask getDefaultWanRouterLinkSubnetMask() {
         return defaultWanRouterLinkSubnetMask;
     }
@@ -128,4 +118,11 @@ public class NetworksController {
         }
         return null;
     }
+
+    public boolean isSameNetwork(PCModel initiator, PCModel recipient) {
+        long initiatorNetworkPortion = initiator.getIpAddress().toLong() & initiator.getSubnetMask().toLong();
+        long recipientNetworkPortion = recipient.getIpAddress().toLong() & recipient.getSubnetMask().toLong();
+        return initiatorNetworkPortion == recipientNetworkPortion;
+    }
+
 }

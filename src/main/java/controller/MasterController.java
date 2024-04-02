@@ -2,10 +2,13 @@ package controller;
 
 import common.NetworkDevice;
 import common.NetworkDeviceType;
+import javafx.util.Pair;
 import model.*;
 import view.SimulationWorkspaceView;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class MasterController {
     SimulationWorkspaceView simulationWorkspaceView;
@@ -28,17 +31,18 @@ public class MasterController {
         switch (networkDevice.getNetworkDeviceType()) {
             case ROUTER:
                 RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                LanNetwork network = networksController.createDefaultLanNetwork();
+                LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
-                routerModel.addIpAddressInNetwork(routerIpAddress, network);
+                routerModel.addRouterInterface(new RouterInterface(routerIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
-                deviceStorage.add(routerModel);
+                deviceStorage.addRouter(routerModel);
                 return;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 break;
             case PC:
-                networkDeviceModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                deviceStorage.addPc(pcModel);
                 break;
             default:
                 System.out.println("incorrect network device");
@@ -47,11 +51,26 @@ public class MasterController {
     }
 
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
-        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
-            RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
-            networksController.createWanLink(firstRouter, secondRouter);
+        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            if (second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+                RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
+                RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
+                networksController.createWanLink(firstRouter, secondRouter);
+            } else if (second.getNetworkDeviceType() == NetworkDeviceType.PC) {
+                RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
+                PCModel pcModel = deviceStorage.getPcModel(second.getUuid());
+                Pair<LanNetwork, IPAddress> directConnectionLan = routerModel.getDirectConnectionLan();
+                networksController.connectPcToNetwork(pcModel, directConnectionLan.getKey(), directConnectionLan.getValue());
+            }
+        } else if (second.getNetworkDeviceType() == NetworkDeviceType.PC) {
+            if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+                RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
+                PCModel pcModel = deviceStorage.getPcModel(second.getUuid());
+                Pair<LanNetwork, IPAddress> directConnectionLan = routerModel.getDirectConnectionLan();
+                networksController.connectPcToNetwork(pcModel, directConnectionLan.getKey(), directConnectionLan.getValue());
+            }
         }
+
         return true;
     }
 
