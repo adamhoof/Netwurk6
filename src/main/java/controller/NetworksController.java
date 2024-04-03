@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class NetworksController {
-    private IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
+    private final IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
     private final SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
 
     private final Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();

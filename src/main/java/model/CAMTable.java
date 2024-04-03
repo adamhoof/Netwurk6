@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CAMTable {
-    private Set<MACAddress> entries;
+    private final Set<MACAddress> entries;
 
     public CAMTable() {
         this.entries = new HashSet<>();
