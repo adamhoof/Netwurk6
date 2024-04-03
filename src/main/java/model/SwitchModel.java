@@ -5,7 +5,7 @@ import common.NetworkDeviceType;
 import java.util.UUID;
 
 public class SwitchModel extends NetworkDeviceModel {
-    private CAMTable camTable;
+    private final CAMTable camTable;
 
     public SwitchModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.SWITCH);

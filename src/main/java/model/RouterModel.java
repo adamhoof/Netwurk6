@@ -12,7 +12,7 @@ public class RouterModel extends NetworkDeviceModel {
     private final RoutingTable routingTable;
 
     private final IPAddress currentAvailableLanNetworkIp = new IPAddress(192, 168, 1, 0);
-    private SubnetMask defaultLanSubnetMask = new SubnetMask(24);
+    private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
     private final Map<Network, RouterInterface> routerInterfaces = new HashMap<>();
 
