@@ -11,4 +11,20 @@ public class SwitchModel extends NetworkDeviceModel {
         super(uuid, macAddress, NetworkDeviceType.SWITCH);
         this.camTable = new CAMTable();
     }
+
+    public void learnMacAddress(MACAddress macAddress) {
+        camTable.addEntry(macAddress);
+    }
+
+    public boolean knowsMacAddress(MACAddress macAddress) {
+        return camTable.containsEntry(macAddress);
+    }
+
+    public void forgetMacAddress(MACAddress macAddress) {
+        camTable.removeEntry(macAddress);
+    }
+
+    public CAMTable getCamTable() {
+        return camTable;
+    }
 }
