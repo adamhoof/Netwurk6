@@ -1,8 +1,5 @@
 import controller.NetworksController;
-import model.IPAddress;
-import model.MACAddress;
-import model.PCModel;
-import model.RouterModel;
+import model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -19,20 +16,23 @@ public class NetworksControllerTest {
         IPAddress reserved = networksController.reserveCurrentAvailableWanLinkNetworkAddress();
         IPAddress result = networksController.reserveCurrentAvailableWanLinkNetworkAddress();
 
-        Assertions.assertEquals(Arrays.toString(expected.getOctets()), Arrays.toString(result.getOctets()));
+        Assertions.assertEquals(expected.toString(), result.toString());
     }
 
     @Test
-    public void addNetworkConnection_firstPC_connectionsNotEmpty_returnFalse() {
+    public void addPcNetworkConnection_pcConnectionsNotEmpty_returnFalse() {
         NetworksController networksController = new NetworksController();
-        PCModel pc1 = new PCModel(UUID.randomUUID(), new MACAddress("PC1_MAC"));
-        PCModel pc2 = new PCModel(UUID.randomUUID(), new MACAddress("PC2_MAC"));
+        PCModel pc = new PCModel(UUID.randomUUID(), new MACAddress("PC1_MAC"));
+        SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress("SWITCH_MAC"));
         RouterModel router = new RouterModel(UUID.randomUUID(), new MACAddress("ROUTER_MAC"));
-        networksController.addNetworkConnection(pc1, router);
+        networksController.addNetworkConnection(pc, router);
 
         boolean expected = false;
-        boolean result = networksController.addNetworkConnection(pc1, pc2);
+        boolean result = networksController.addNetworkConnection(pc, switchModel);
 
+        int expectedPcNetworkConnectionsSize = 1;
+        int actualPcNetworkConnections = networksController.getDeviceConnections(pc).size();
         Assertions.assertEquals(expected, result);
+        Assertions.assertEquals(expectedPcNetworkConnectionsSize, actualPcNetworkConnections);
     }
 }

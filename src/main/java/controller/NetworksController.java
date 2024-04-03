@@ -75,6 +75,13 @@ public class NetworksController {
         return true;
     }
 
+    public ArrayList<NetworkDeviceModel> getDeviceConnections(NetworkDeviceModel networkDeviceModel){
+        if (!networkConnections.containsKey(networkDeviceModel)){
+            return null;
+        }
+        return networkConnections.get(networkDeviceModel);
+    }
+
     public void createWanLink(RouterModel first, RouterModel second) {
         WanNetwork network = createDefaultWanNetwork();
         IPAddress firstRouterIpAddress = reserveIpAddress(network);
@@ -106,6 +113,7 @@ public class NetworksController {
         network.addDevice(pcModel);
         pcModel.connectToNetwork(network, ipAddress, defaultGateway);
     }
+
     public SubnetMask getDefaultWanRouterLinkSubnetMask() {
         return defaultWanRouterLinkSubnetMask;
     }
