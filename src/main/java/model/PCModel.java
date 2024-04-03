@@ -10,7 +10,7 @@ public class PCModel extends NetworkDeviceModel {
     private Network network;
     private IPAddress defaultGateway;
     private SubnetMask subnetMask;
-    private ArpCache arpCache;
+    private final ArpCache arpCache;
 
     public PCModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.PC);

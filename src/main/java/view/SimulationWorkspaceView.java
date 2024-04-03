@@ -11,6 +11,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+
 import java.util.Map;
 
 public class SimulationWorkspaceView {
@@ -160,11 +161,11 @@ public class SimulationWorkspaceView {
                     firstSelectedDevice = networkDeviceView;
                 } else {
                     if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)) {
-                        System.out.println("unable to propagate network device connection to model");
+                        System.out.println("Unable to connect devices");
+                    } else {
+                        Map<String, String> labels = masterController.getLabelsForConnection(firstSelectedDevice, networkDeviceView);
+                        addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
                     }
-                    Map<String, String> labels = masterController.getLabelsForConnection(firstSelectedDevice, networkDeviceView);
-                    addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
-
                     isConnectionMode = false;
                     firstSelectedDevice = null;
                 }

@@ -1,7 +1,5 @@
 package model;
 
-import common.NetworkDeviceType;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
