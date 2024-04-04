@@ -12,6 +12,8 @@ public class PCModel extends NetworkDeviceModel {
     private SubnetMask subnetMask;
     private final ArpCache arpCache;
 
+    private boolean isConfigured = false;
+
     public PCModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.PC);
         this.arpCache = new ArpCache();
@@ -27,6 +29,7 @@ public class PCModel extends NetworkDeviceModel {
         this.ipAddress = ipAddress;
         this.defaultGateway = defaultGateway;
         this.subnetMask = network.getSubnetMask();
+        isConfigured = true;
     }
 
     public Network getNetwork() {
@@ -48,6 +51,12 @@ public class PCModel extends NetworkDeviceModel {
     public IPAddress getDefaultGateway() {
         return defaultGateway;
     }
+
+    public boolean isConfigured() {
+        return isConfigured;
+    }
+
+
     @Override
     public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
         if (!directConnections.isEmpty()) {
