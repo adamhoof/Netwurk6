@@ -6,7 +6,7 @@ public class StringMessage implements Message{
         this.body = body;
     }
 
-    public StringMessage(){};
+    public StringMessage(){}
 
     public String getBody() {
         return body;
