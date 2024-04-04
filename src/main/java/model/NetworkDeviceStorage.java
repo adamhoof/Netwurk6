@@ -43,11 +43,12 @@ public class NetworkDeviceStorage {
         return (RouterModel) networkDeviceModels.get(uuid);
     }
 
-    public PCModel getPcModel(UUID uuid) {
-        if (!networkDeviceModels.containsKey(uuid)) {
+    public NetworkDeviceModel getNetworkDeviceByMac(MACAddress macAddress) {
+        UUID uuidFromMac = UUID.fromString(macAddress.toString());
+        if (!networkDeviceModels.containsKey(uuidFromMac)) {
             return null;
         }
-        return (PCModel) networkDeviceModels.get(uuid);
+        return networkDeviceModels.get(uuidFromMac);
     }
 
     public ArrayList<PCModel> getPcModels() {
