@@ -36,9 +36,11 @@ public class MasterController {
                 RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
-                routerModel.addRouterInterface(new RouterInterface(routerIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
+                RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()));
+                routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 routerModel.setName("Router" + routerNameCounter++);
+                deviceStorage.add(routerInterface);
                 deviceStorage.addRouter(routerModel);
                 return;
             case SWITCH:
@@ -69,6 +71,27 @@ public class MasterController {
         if (firstModel == null || secondModel == null) {
             System.out.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
             return false;
+        }
+
+        if (firstModel instanceof RouterModel routerModel) {
+            if (secondModel instanceof PCModel pcModel) {
+                RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
+                return pcModel.addConnection(routerInterface) && routerInterface.addConnection(secondModel);
+            } else if (second instanceof SwitchModel switchModel) {
+                LanNetwork lanNetwork = routerModel.createLanNetwork();
+                RouterInterface routerInterface = routerModel.getNetworksRouterInterface(lanNetwork);
+                return switchModel.addConnection(routerInterface) && routerInterface.addConnection(switchModel);
+            }
+        }
+        if (secondModel instanceof RouterModel routerModel) {
+            if (firstModel instanceof PCModel pcModel) {
+                RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
+                return pcModel.addConnection(routerInterface) && routerInterface.addConnection(secondModel);
+            } else if (firstModel instanceof SwitchModel switchModel) {
+                LanNetwork lanNetwork = routerModel.createLanNetwork();
+                RouterInterface routerInterface = routerModel.getNetworksRouterInterface(lanNetwork);
+                return switchModel.addConnection(routerInterface) && routerInterface.addConnection(switchModel);
+            }
         }
         return firstModel.addConnection(secondModel) && secondModel.addConnection(firstModel);
 

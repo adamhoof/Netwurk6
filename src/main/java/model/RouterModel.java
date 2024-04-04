@@ -68,10 +68,19 @@ public class RouterModel extends NetworkDeviceModel {
         lanNetworks.add(lanNetwork);
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
-        RouterInterface routerInterface = new RouterInterface(interfaceIp, new MACAddress(UUID.randomUUID().toString()));
+        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()));
         routerInterfaces.put(lanNetwork, routerInterface);
 
         return lanNetwork;
+    }
+
+    public RouterInterface getNetworksRouterInterface(Network network) {
+        for (Network networkFromSet : routerInterfaces.keySet()) {
+            if (networkFromSet.getNetworkIpAddress() == network.getNetworkIpAddress()){
+                return routerInterfaces.get(networkFromSet);
+            }
+        }
+        return null;
     }
 
     public ArrayList<LanNetwork> getLanNetworks() {
@@ -101,7 +110,11 @@ public class RouterModel extends NetworkDeviceModel {
         return currentAvailableLanNetworkIp;
     }
 
-    public Pair<LanNetwork, IPAddress> getDirectConnectionLan() {
+    public Pair<LanNetwork, IPAddress> getDirectConnectionLanNetworkIp() {
         return new Pair<>(lanNetworks.getFirst(), routerInterfaces.get(lanNetworks.getFirst()).ipAddress);
+    }
+
+    public RouterInterface getDirectConnectionLanInterface(){
+        return routerInterfaces.get(lanNetworks.getFirst());
     }
 }

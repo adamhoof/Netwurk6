@@ -53,8 +53,8 @@ public class NetworksController {
         IPAddress firstRouterIpAddress = reserveIpAddress(network);
         IPAddress secondRouterIpAddress = reserveIpAddress(network);
 
-        first.addRouterInterface(new RouterInterface(firstRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
-        second.addRouterInterface(new RouterInterface(secondRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
+        first.addRouterInterface(new RouterInterface(UUID.randomUUID(), firstRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
+        second.addRouterInterface(new RouterInterface(UUID.randomUUID(), secondRouterIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
 
         first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
         second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
