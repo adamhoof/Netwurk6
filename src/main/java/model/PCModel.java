@@ -17,6 +17,11 @@ public class PCModel extends NetworkDeviceModel {
         this.arpCache = new ArpCache();
     }
 
+    public PCModel(UUID uuid, MACAddress macAddress, String name) {
+        super(uuid, macAddress, NetworkDeviceType.PC,name);
+        this.arpCache = new ArpCache();
+    }
+
     public void connectToNetwork(Network network, IPAddress ipAddress, IPAddress defaultGateway) {
         this.network = network;
         this.ipAddress = ipAddress;

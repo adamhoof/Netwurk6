@@ -21,6 +21,11 @@ public class RouterModel extends NetworkDeviceModel {
         this.routingTable = new RoutingTable();
     }
 
+    public RouterModel(UUID uuid, MACAddress macAddress, String name) {
+        super(uuid, macAddress, NetworkDeviceType.ROUTER, name);
+        this.routingTable = new RoutingTable();
+    }
+
     public void appendRoutingTable(RouteEntry routeEntry) {
         routingTable.addEntry(routeEntry);
     }

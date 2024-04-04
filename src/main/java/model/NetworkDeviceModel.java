@@ -21,6 +21,13 @@ public abstract class NetworkDeviceModel implements NetworkDevice {
         this.macAddress = macAddress;
     }
 
+    protected NetworkDeviceModel(UUID uuid, MACAddress macAddress, NetworkDeviceType type, String name) {
+        this.uuid = uuid;
+        this.type = type;
+        this.macAddress = macAddress;
+        this.name = name;
+    }
+
     public UUID getUuid() {
         return uuid;
     }
@@ -38,4 +45,17 @@ public abstract class NetworkDeviceModel implements NetworkDevice {
         return true;
     }
 
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
+    }
+
+    public HashSet<NetworkDeviceModel> getDirectConnections() {
+        return directConnections;
+    }
 }

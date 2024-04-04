@@ -13,10 +13,12 @@ import java.util.UUID;
 public abstract class NetworkDeviceView extends StackPane implements NetworkDevice {
     private final NetworkDeviceType networkDeviceType;
 
-    private ArrayList<String> labels;
-    private ImageView imageView;
+    private final ArrayList<String> labels;
+    private final ImageView imageView;
 
     private final UUID uuid;
+
+    private String name;
 
 
     private final List<ConnectionLine> connections = new ArrayList<>();
@@ -39,6 +41,10 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
     }
 
     public abstract NetworkDeviceView deepCopy();
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public void addConnectionLine(ConnectionLine line) {
         connections.add(line);

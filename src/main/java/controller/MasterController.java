@@ -2,7 +2,6 @@ package controller;
 
 import common.NetworkDevice;
 import common.NetworkDeviceType;
-import javafx.util.Pair;
 import model.*;
 import view.SimulationWorkspaceView;
 
@@ -18,12 +17,16 @@ public class MasterController {
 
     SimulationController simulationController;
 
+    int pcNameCounter = 0;
+    int switchNameCounter = 0;
+    int routerNameCounter = 0;
+
     public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController) {
         this.simulationWorkspaceView = simulationWorkspaceView;
         this.simulationWorkspaceView.setController(this);
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
-        simulationController = new SimulationController(deviceStorage, networksController);
+        simulationController = new SimulationController(simulationWorkspaceView, deviceStorage, networksController);
     }
 
     public void addDevice(NetworkDevice networkDevice) {
@@ -35,19 +38,21 @@ public class MasterController {
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
                 routerModel.addRouterInterface(new RouterInterface(routerIpAddress, new MACAddress(UUID.randomUUID().toString())), network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
+                routerModel.setName("Router" + routerNameCounter++);
                 deviceStorage.addRouter(routerModel);
                 return;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                networkDeviceModel.setName("Switch" + switchNameCounter++);
                 deviceStorage.add(networkDeviceModel);
                 break;
             case PC:
                 PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                pcModel.setName("PC" + pcNameCounter++);
                 deviceStorage.addPc(pcModel);
                 break;
             default:
                 System.out.println("incorrect network device");
-                return;
         }
     }
 
