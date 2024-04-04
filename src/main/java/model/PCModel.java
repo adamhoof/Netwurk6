@@ -43,4 +43,12 @@ public class PCModel extends NetworkDeviceModel {
     public IPAddress getDefaultGateway() {
         return defaultGateway;
     }
+    @Override
+    public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
+        if (!directConnections.isEmpty()) {
+            return false;
+        }
+        directConnections.add(networkDeviceModel);
+        return true;
+    }
 }

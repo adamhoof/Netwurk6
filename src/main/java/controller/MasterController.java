@@ -39,6 +39,7 @@ public class MasterController {
                 return;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                deviceStorage.add(networkDeviceModel);
                 break;
             case PC:
                 PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
@@ -51,27 +52,21 @@ public class MasterController {
     }
 
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
-        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            if (second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-                RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
-                RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
-                networksController.createWanLink(firstRouter, secondRouter);
-            } else if (second.getNetworkDeviceType() == NetworkDeviceType.PC) {
-                RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
-                PCModel pcModel = deviceStorage.getPcModel(second.getUuid());
-                Pair<LanNetwork, IPAddress> directConnectionLan = routerModel.getDirectConnectionLan();
-                networksController.connectPcToNetwork(pcModel, directConnectionLan.getKey(), directConnectionLan.getValue());
-            }
-        } else if (second.getNetworkDeviceType() == NetworkDeviceType.PC) {
-            if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-                RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
-                PCModel pcModel = deviceStorage.getPcModel(second.getUuid());
-                Pair<LanNetwork, IPAddress> directConnectionLan = routerModel.getDirectConnectionLan();
-                networksController.connectPcToNetwork(pcModel, directConnectionLan.getKey(), directConnectionLan.getValue());
-            }
-        }
+        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
+            RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
+            networksController.createWanLink(firstRouter, secondRouter);
 
-        return true;
+        }
+        NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
+        NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
+
+        if (firstModel == null || secondModel == null) {
+            System.out.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
+            return false;
+        }
+        return firstModel.addConnection(secondModel) && secondModel.addConnection(firstModel);
+
     }
 
     public Map<String, String> getLabelsForConnection(NetworkDevice first, NetworkDevice second) {

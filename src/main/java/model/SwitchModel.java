@@ -27,4 +27,13 @@ public class SwitchModel extends NetworkDeviceModel {
     public CAMTable getCamTable() {
         return camTable;
     }
+    @Override
+    public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
+        switchConnections.add(new SwitchConnection(networkDeviceModel, currentAvailablePort++));
+        return true;
+    }
+
+    public HashSet<SwitchConnection> getSwitchConnections() {
+        return switchConnections;
+    }
 }

@@ -1,6 +1,5 @@
 package controller;
 
-import common.NetworkDeviceType;
 import model.*;
 
 import java.util.ArrayList;
@@ -11,8 +10,6 @@ import java.util.UUID;
 public class NetworksController {
     private final IPAddress currentAvailableWanNetworkAddress = new IPAddress(50, 0, 0, 0);
     private final SubnetMask defaultWanRouterLinkSubnetMask = new SubnetMask(30);
-
-    private final Map<NetworkDeviceModel, ArrayList<NetworkDeviceModel>> networkConnections = new HashMap<>();
 
     private final Map<RouterModel, ArrayList<RouterModel>> routersRipConnections = new HashMap<>();
 
@@ -49,37 +46,6 @@ public class NetworksController {
 
     public IPAddress reserveIpAddress(Network network) {
         return network.getNextAvailableIpAddress();
-    }
-
-    public boolean addNetworkConnection(NetworkDeviceModel first, NetworkDeviceModel second) {
-        boolean firstEmpty = !networkConnections.containsKey(first);
-        boolean secondEmpty = !networkConnections.containsKey(second);
-
-        if (!firstEmpty && first.getNetworkDeviceType() == NetworkDeviceType.PC) {
-            return false;
-        }
-        if (!secondEmpty && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
-            return false;
-        }
-
-        if (firstEmpty) {
-            networkConnections.put(first, new ArrayList<>());
-        }
-        networkConnections.get(first).add(second);
-
-        if (secondEmpty) {
-            networkConnections.put(second, new ArrayList<>());
-        }
-        networkConnections.get(second).add(first);
-
-        return true;
-    }
-
-    public ArrayList<NetworkDeviceModel> getDeviceConnections(NetworkDeviceModel networkDeviceModel){
-        if (!networkConnections.containsKey(networkDeviceModel)){
-            return null;
-        }
-        return networkConnections.get(networkDeviceModel);
     }
 
     public void createWanLink(RouterModel first, RouterModel second) {
