@@ -1,7 +1,9 @@
 package view;
 
+import common.NetworkDevice;
 import controller.MasterController;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
@@ -12,6 +14,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class SimulationWorkspaceView {
@@ -30,9 +33,21 @@ public class SimulationWorkspaceView {
 
     ToolBar toolBar;
 
+    ArrayList<ConnectionLine> connectionLines = new ArrayList<>();
+
     public SimulationWorkspaceView(Stage stage) {
         this.stage = stage;
         initializeView();
+    }
+
+    public ConnectionLine getConnectionLine(NetworkDevice first, NetworkDevice second) {
+        for (ConnectionLine connectionLine : connectionLines) {
+            if ((connectionLine.getStartDevice().getUuid() == first.getUuid() && connectionLine.getEndDevice().getUuid() == second.getUuid())
+                    || connectionLine.getStartDevice().getUuid() == second.getUuid() && connectionLine.getEndDevice().getUuid() == first.getUuid()) {
+                return connectionLine;
+            }
+        }
+        return null;
     }
 
     private void initializeView() {
@@ -228,6 +243,7 @@ public class SimulationWorkspaceView {
 
         startDeviceView.addConnectionLine(connectionLine);
         endDeviceView.addConnectionLine(connectionLine);
+        connectionLines.add(connectionLine);
     }
 
     private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine connectionLine) {
@@ -272,6 +288,14 @@ public class SimulationWorkspaceView {
     public void display() {
         stage.setScene(scene);
         stage.show();
+    }
+
+    public void addNode(Node node) {
+        simulationWorkspace.getChildren().add(node);
+    }
+
+    public void removeNode(Node node){
+        simulationWorkspace.getChildren().remove(node);
     }
 
     public void setController(MasterController masterController) {
