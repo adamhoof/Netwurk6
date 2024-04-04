@@ -2,6 +2,7 @@ import controller.NetworksController;
 import model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
 import java.util.UUID;
 
 public class NetworksControllerTest {
@@ -23,13 +24,14 @@ public class NetworksControllerTest {
         PCModel pc = new PCModel(UUID.randomUUID(), new MACAddress("PC1_MAC"));
         SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress("SWITCH_MAC"));
         RouterModel router = new RouterModel(UUID.randomUUID(), new MACAddress("ROUTER_MAC"));
-        networksController.addNetworkConnection(pc, router);
+
+        pc.addConnection(switchModel);
 
         boolean expected = false;
-        boolean result = networksController.addNetworkConnection(pc, switchModel);
+        boolean result = pc.addConnection(router);
 
         int expectedPcNetworkConnectionsSize = 1;
-        int actualPcNetworkConnections = networksController.getDeviceConnections(pc).size();
+        int actualPcNetworkConnections = pc.getDirectConnections().size();
         Assertions.assertEquals(expected, result);
         Assertions.assertEquals(expectedPcNetworkConnectionsSize, actualPcNetworkConnections);
     }
