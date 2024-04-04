@@ -4,25 +4,35 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CAMTable {
-    private final Set<MACAddress> entries;
+    private final Set<CamEntry> entries;
 
     public CAMTable() {
         this.entries = new HashSet<>();
     }
 
-    public void addEntry(MACAddress macAddress) {
-        entries.add(macAddress);
+    public void addEntry(MACAddress macAddress, int port) {
+        entries.add(new CamEntry(macAddress, port));
     }
 
     public boolean containsEntry(MACAddress macAddress) {
-        return entries.contains(macAddress);
+        for (CamEntry camEntry : entries) {
+            if (camEntry.macAddress == macAddress) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void removeEntry(MACAddress macAddress) {
-        entries.remove(macAddress);
+        for (CamEntry camEntry : entries) {
+            if (!(camEntry.macAddress == macAddress)) {
+                continue;
+            }
+            entries.remove(camEntry);
+        }
     }
 
-    public Set<MACAddress> getEntries() {
-        return new HashSet<>(entries);
+    public Set<CamEntry> getEntries() {
+        return entries;
     }
 }
