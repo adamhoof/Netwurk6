@@ -39,11 +39,14 @@ public class SimulationController {
     }
 
     public void startSimulation() {
+        if (simulationRunning) {
+            return;
+        }
         simulationRunning = true;
 
         threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
         startPacketProcessing();
-        threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication,0,5,TimeUnit.SECONDS);
+        threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
 
     public void stopSimulation() {
@@ -176,7 +179,7 @@ public class SimulationController {
                     }
                 }
             }
-        } else if (networkConnection.getEndDevice() instanceof RouterModel routerModel){
+        } else if (networkConnection.getEndDevice() instanceof RouterModel routerModel) {
 
         }
     }
