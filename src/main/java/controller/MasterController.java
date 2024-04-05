@@ -57,12 +57,6 @@ public class MasterController {
     }
 
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
-        if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            RouterModel firstRouter = deviceStorage.getRouterModel(first.getUuid());
-            RouterModel secondRouter = deviceStorage.getRouterModel(second.getUuid());
-            networksController.createWanLink(firstRouter, secondRouter);
-
-        }
         NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
         NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
 
