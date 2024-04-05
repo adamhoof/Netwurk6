@@ -30,9 +30,7 @@ public class NetworksControllerTest {
         boolean expected = false;
         boolean result = pc.addConnection(router);
 
-        int expectedPcNetworkConnectionsSize = 1;
-        int actualPcNetworkConnections = pc.getDirectConnections().size();
         Assertions.assertEquals(expected, result);
-        Assertions.assertEquals(expectedPcNetworkConnectionsSize, actualPcNetworkConnections);
+        Assertions.assertNotNull(pc.getConnection());
     }
 }
