@@ -14,13 +14,15 @@ public class PCModel extends NetworkDeviceModel {
 
     private boolean isConfigured = false;
 
+    private NetworkDeviceModel connection;
+
     public PCModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.PC);
         this.arpCache = new ArpCache();
     }
 
     public PCModel(UUID uuid, MACAddress macAddress, String name) {
-        super(uuid, macAddress, NetworkDeviceType.PC,name);
+        super(uuid, macAddress, NetworkDeviceType.PC, name);
         this.arpCache = new ArpCache();
     }
 
@@ -59,10 +61,14 @@ public class PCModel extends NetworkDeviceModel {
 
     @Override
     public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
-        if (!directConnections.isEmpty()) {
+        if (connection != null) {
             return false;
         }
-        directConnections.add(networkDeviceModel);
+        connection = networkDeviceModel;
         return true;
+    }
+
+    public NetworkDeviceModel getConnection(){
+        return connection;
     }
 }

@@ -91,7 +91,7 @@ public class SimulationController {
     }
 
     public void initiateCommunication(PCModel initiator, PCModel recipient) {
-        NetworkDeviceModel next = initiator.getDirectConnections().iterator().next();
+        NetworkDeviceModel next = initiator.getConnection();
         if (!initiator.isConfigured()) {
             System.out.printf("Oh boi %s is not configured\n", initiator);
             sendDhcpDiscovery(new NetworkConnection(initiator, next), initiator.getMacAddress());

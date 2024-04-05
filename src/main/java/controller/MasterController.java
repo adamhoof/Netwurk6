@@ -33,7 +33,7 @@ public class MasterController {
                 RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
                 LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddress(network);
-                RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()));
+                RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel);
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 routerModel.setName(AutoNameGenerator.generateRouterName());
@@ -71,28 +71,18 @@ public class MasterController {
             return false;
         }
 
+        if (firstModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER && secondModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            networksController.createWanLink((RouterModel) firstModel, (RouterModel) secondModel);
+            return true;
+        }
+        //For now, RouterModel handles the connection for the second device, so we need to return after adding the second model
         if (firstModel instanceof RouterModel routerModel) {
-            if (secondModel instanceof PCModel pcModel) {
-                RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
-                return pcModel.addConnection(routerInterface) && routerInterface.addConnection(secondModel);
-            } else if (second instanceof SwitchModel switchModel) {
-                LanNetwork lanNetwork = routerModel.createLanNetwork();
-                RouterInterface routerInterface = routerModel.getNetworksRouterInterface(lanNetwork);
-                return switchModel.addConnection(routerInterface) && routerInterface.addConnection(switchModel);
-            }
+            return routerModel.addConnection(secondModel);
         }
         if (secondModel instanceof RouterModel routerModel) {
-            if (firstModel instanceof PCModel pcModel) {
-                RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
-                return pcModel.addConnection(routerInterface) && routerInterface.addConnection(secondModel);
-            } else if (firstModel instanceof SwitchModel switchModel) {
-                LanNetwork lanNetwork = routerModel.createLanNetwork();
-                RouterInterface routerInterface = routerModel.getNetworksRouterInterface(lanNetwork);
-                return switchModel.addConnection(routerInterface) && routerInterface.addConnection(switchModel);
-            }
+            return routerModel.addConnection(firstModel);
         }
         return firstModel.addConnection(secondModel) && secondModel.addConnection(firstModel);
-
     }
 
     public Map<String, String> getLabelsForConnection(NetworkDevice first, NetworkDevice second) {

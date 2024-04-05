@@ -1,12 +1,10 @@
 package model;
 
+import common.AutoNameGenerator;
 import common.NetworkDeviceType;
 import javafx.util.Pair;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class RouterModel extends NetworkDeviceModel {
     private final RoutingTable routingTable;
@@ -15,6 +13,8 @@ public class RouterModel extends NetworkDeviceModel {
     private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
     private final Map<Network, RouterInterface> routerInterfaces = new HashMap<>();
+
+    private final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
 
     public RouterModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER);
@@ -68,7 +68,8 @@ public class RouterModel extends NetworkDeviceModel {
         lanNetworks.add(lanNetwork);
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
-        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()));
+        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()), this);
+        routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
         routerInterfaces.put(lanNetwork, routerInterface);
 
         return lanNetwork;
@@ -116,5 +117,21 @@ public class RouterModel extends NetworkDeviceModel {
 
     public RouterInterface getDirectConnectionLanInterface(){
         return routerInterfaces.get(lanNetworks.getFirst());
+    }
+
+    @Override
+    public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
+        directConnections.add(networkDeviceModel);
+        if (networkDeviceModel instanceof PCModel pcModel) {
+            RouterInterface routerInterface = getDirectConnectionLanInterface();
+            routerInterface.addConnection(pcModel);
+            return networkDeviceModel.addConnection(routerInterface);
+        } else if (networkDeviceModel instanceof SwitchModel switchModel) {
+            LanNetwork lanNetwork = createLanNetwork();
+            RouterInterface routerInterface = getNetworksRouterInterface(lanNetwork);
+            routerInterface.addConnection(switchModel);
+            return networkDeviceModel.addConnection(routerInterface);
+        }
+        return true;
     }
 }

@@ -13,8 +13,6 @@ public abstract class NetworkDeviceModel implements NetworkDevice {
 
     protected String name;
 
-    protected final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
-
     protected NetworkDeviceModel(UUID uuid, MACAddress macAddress, NetworkDeviceType type) {
         this.uuid = uuid;
         this.type = type;
@@ -40,10 +38,7 @@ public abstract class NetworkDeviceModel implements NetworkDevice {
         return type;
     }
 
-    public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
-        directConnections.add(networkDeviceModel);
-        return true;
-    }
+    public abstract boolean addConnection(NetworkDeviceModel networkDeviceModel);
 
     @Override
     public void setName(String name) {
@@ -53,9 +48,5 @@ public abstract class NetworkDeviceModel implements NetworkDevice {
     @Override
     public String toString() {
         return this.name;
-    }
-
-    public HashSet<NetworkDeviceModel> getDirectConnections() {
-        return directConnections;
     }
 }
