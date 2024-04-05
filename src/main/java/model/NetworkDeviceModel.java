@@ -3,7 +3,6 @@ package model;
 import common.NetworkDevice;
 import common.NetworkDeviceType;
 
-import java.util.HashSet;
 import java.util.UUID;
 
 public abstract class NetworkDeviceModel implements NetworkDevice {
