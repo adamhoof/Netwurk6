@@ -1,5 +1,6 @@
 package controller;
 
+import common.AutoNameGenerator;
 import common.NetworkDevice;
 import common.NetworkDeviceType;
 import model.*;
