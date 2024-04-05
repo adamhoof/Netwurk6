@@ -77,7 +77,7 @@ public class RouterModel extends NetworkDeviceModel {
 
     public RouterInterface getNetworksRouterInterface(Network network) {
         for (Network networkFromSet : routerInterfaces.keySet()) {
-            if (networkFromSet.getNetworkIpAddress() == network.getNetworkIpAddress()){
+            if (networkFromSet.getNetworkIpAddress() == network.getNetworkIpAddress()) {
                 return routerInterfaces.get(networkFromSet);
             }
         }
@@ -92,7 +92,7 @@ public class RouterModel extends NetworkDeviceModel {
         if (!routerInterfaces.containsKey(network)) {
             return new IPAddress(0, 0, 0, 0);
         }
-        return routerInterfaces.get(network).ipAddress;
+        return routerInterfaces.get(network).getIpAddress();
     }
 
     public boolean isInNetwork(Network network) {
@@ -112,10 +112,10 @@ public class RouterModel extends NetworkDeviceModel {
     }
 
     public Pair<LanNetwork, IPAddress> getDirectConnectionLanNetworkIp() {
-        return new Pair<>(lanNetworks.getFirst(), routerInterfaces.get(lanNetworks.getFirst()).ipAddress);
+        return new Pair<>(lanNetworks.getFirst(), routerInterfaces.get(lanNetworks.getFirst()).getIpAddress());
     }
 
-    public RouterInterface getDirectConnectionLanInterface(){
+    public RouterInterface getDirectConnectionLanInterface() {
         return routerInterfaces.get(lanNetworks.getFirst());
     }
 
