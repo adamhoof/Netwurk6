@@ -147,41 +147,54 @@ public class SimulationController {
 
     public void forwardToNextDevice(NetworkConnection networkConnection, Frame frame) {
         if (networkConnection.getEndDevice() instanceof PCModel pc) {
-            System.out.printf("Received packet on PC!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
-            if (frame.getDestinationMac() == pc.getMacAddress()) {
-                if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
-                    System.out.printf("Hi i am %s and i received this message: %s\n", pc.getMacAddress(), stringMessage.getBody());
-                }
-            }
+            handleFrameOnPc(pc, networkConnection, frame);
 
         } else if (networkConnection.getEndDevice() instanceof SwitchModel switchModel) {
-            System.out.printf("Received packet on SWITCH!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
-            NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
-            if (frame.getDestinationMac().equals(MACAddress.ipv4Broadcast())) {
-                broadcastFrame(switchModel, connectedDevice, frame, false);
-                return;
-            }
+            handleFrameOnSwitch(switchModel, networkConnection, frame);
 
-            if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
-                broadcastFrame(switchModel, connectedDevice, frame, true);
-
-            } else {
-                int outgoingPort = switchModel.getPort(frame.getDestinationMac());
-                for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
-                    if (switchConnection.getNetworkDeviceModel() == connectedDevice) {
-                        //Retrieve ingoing port
-                        switchModel.learnMacAddress(connectedDevice.getMacAddress(), switchConnection.getPort());
-                    }
-                }
-                for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
-                    if (switchConnection.getPort() == outgoingPort) {
-                        sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);
-                    }
-                }
-            }
-        } else if (networkConnection.getEndDevice() instanceof RouterModel routerModel) {
-
+        } else if (networkConnection.getEndDevice() instanceof RouterInterface routerInterface) {
+            handleFrameOnRouter(routerInterface, networkConnection, frame);
         }
+    }
+
+    public void handleFrameOnPc(PCModel pc, NetworkConnection networkConnection, Frame frame) {
+        System.out.printf("Received packet on PC!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
+        if (frame.getDestinationMac() == pc.getMacAddress()) {
+            if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
+                System.out.printf("Hi i am %s and i received this message: %s\n", pc.getMacAddress(), stringMessage.getBody());
+            }
+        }
+    }
+
+    public void handleFrameOnSwitch(SwitchModel switchModel, NetworkConnection networkConnection, Frame frame) {
+        System.out.printf("Received packet on SWITCH!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
+        NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
+        if (frame.getDestinationMac().equals(MACAddress.ipv4Broadcast())) {
+            broadcastFrame(switchModel, connectedDevice, frame, false);
+            return;
+        }
+
+        if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
+            broadcastFrame(switchModel, connectedDevice, frame, true);
+
+        } else {
+            int outgoingPort = switchModel.getPort(frame.getDestinationMac());
+            for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
+                if (switchConnection.getNetworkDeviceModel() == connectedDevice) {
+                    //Retrieve ingoing port
+                    switchModel.learnMacAddress(connectedDevice.getMacAddress(), switchConnection.getPort());
+                }
+            }
+            for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
+                if (switchConnection.getPort() == outgoingPort) {
+                    sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);
+                }
+            }
+        }
+    }
+
+    public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
+
     }
 
     private void broadcastFrame(SwitchModel switchModel, NetworkDeviceModel directlyConnectedDevice, Frame frame, boolean learnSourceDeviceMac) {
