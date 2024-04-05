@@ -17,15 +17,15 @@ public class RouterModelTest {
         routerModel.getLanNetworks().add(lanNetwork);
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
-        RouterInterface routerInterface = new RouterInterface(interfaceIp, new MACAddress(UUID.randomUUID().toString()));
+        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()),routerModel);
         routerModel.getRouterInterfaces().put(lanNetwork, routerInterface);
 
-        IPAddress expectedCurrentAvailableIp = new IPAddress(192,168,2,0);
+        IPAddress expectedCurrentAvailableIp = new IPAddress(192, 168, 2, 0);
         int expectedRouterModelLanNetworksCount = 1;
         int expectedRouterModelInterfacesCount = 1;
 
         Assertions.assertEquals(expectedCurrentAvailableIp.toString(), routerModel.getCurrentAvailableLanNetworkIp().toString());
         Assertions.assertEquals(expectedRouterModelLanNetworksCount, routerModel.getLanNetworks().size());
-        Assertions.assertEquals(expectedRouterModelInterfacesCount,routerModel.getRouterInterfaces().size());
+        Assertions.assertEquals(expectedRouterModelInterfacesCount, routerModel.getRouterInterfaces().size());
     }
 }
