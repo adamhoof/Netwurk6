@@ -17,10 +17,6 @@ public class MasterController {
 
     SimulationController simulationController;
 
-    int pcNameCounter = 0;
-    int switchNameCounter = 0;
-    int routerNameCounter = 0;
-
     public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController) {
         this.simulationWorkspaceView = simulationWorkspaceView;
         this.simulationWorkspaceView.setController(this);
@@ -39,18 +35,19 @@ public class MasterController {
                 RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()));
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
-                routerModel.setName("Router" + routerNameCounter++);
+                routerModel.setName(AutoNameGenerator.generateRouterName());
+                routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
                 deviceStorage.add(routerInterface);
                 deviceStorage.addRouter(routerModel);
                 return;
             case SWITCH:
                 networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                networkDeviceModel.setName("Switch" + switchNameCounter++);
+                networkDeviceModel.setName(AutoNameGenerator.generateSwitchName());
                 deviceStorage.add(networkDeviceModel);
                 break;
             case PC:
                 PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                pcModel.setName("PC" + pcNameCounter++);
+                pcModel.setName(AutoNameGenerator.generatePcName());
                 deviceStorage.addPc(pcModel);
                 break;
             default:
