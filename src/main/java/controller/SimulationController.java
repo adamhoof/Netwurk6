@@ -210,17 +210,27 @@ public class SimulationController {
 
     private void sendFrame(NetworkConnection networkConnection, Frame frame) {
         Platform.runLater(() -> {
-            ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(networkConnection.getStartDevice(), networkConnection.getEndDevice());
+            NetworkDeviceModel animationStartNetworkDevice = networkConnection.getStartDevice();
+            NetworkDeviceModel animationEndNetworkDevice = networkConnection.getEndDevice();
+
+            if (networkConnection.getStartDevice() instanceof RouterInterface routerInterface) {
+                animationStartNetworkDevice = routerInterface.getInterfacesRouter();
+            }
+            if (networkConnection.getEndDevice() instanceof RouterInterface routerInterface) {
+                animationEndNetworkDevice = routerInterface.getInterfacesRouter();
+            }
+
+            ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(animationStartNetworkDevice, animationEndNetworkDevice);
 
             Rectangle square = new Rectangle(10, 10);
             square.setFill(Color.RED);
             simulationWorkspaceView.addNode(square);
 
             Path path = new Path();
-            if (connectionLine.getStartDevice().getUuid() == networkConnection.getStartDevice().getUuid()) {
+            if (connectionLine.getStartDevice().getUuid() == animationStartNetworkDevice.getUuid()) {
                 path.getElements().add(new MoveTo(connectionLine.getStartX(), connectionLine.getStartY()));
                 path.getElements().add(new LineTo(connectionLine.getEndX(), connectionLine.getEndY()));
-            } else if (connectionLine.getStartDevice().getUuid() == networkConnection.getEndDevice().getUuid()) {
+            } else if (connectionLine.getStartDevice().getUuid() == animationEndNetworkDevice.getUuid()) {
                 path.getElements().add(new MoveTo(connectionLine.getEndX(), connectionLine.getEndY()));
                 path.getElements().add(new LineTo(connectionLine.getStartX(), connectionLine.getStartY()));
             }
