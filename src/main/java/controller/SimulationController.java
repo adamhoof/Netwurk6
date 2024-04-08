@@ -271,9 +271,9 @@ public class SimulationController {
 
             ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(animationStartNetworkDevice, animationEndNetworkDevice);
 
-            Rectangle square = new Rectangle(10, 10);
-            square.setFill(Color.RED);
-            simulationWorkspaceView.addNode(square);
+            Rectangle visualFrame = createVisualFrame(frame);
+
+            simulationWorkspaceView.addNode(visualFrame);
 
             Path path = new Path();
             if (connectionLine.getStartDevice().getUuid() == animationStartNetworkDevice.getUuid()) {
@@ -285,20 +285,37 @@ public class SimulationController {
             }
 
             PathTransition pathTransition = new PathTransition();
-            pathTransition.setDuration(Duration.seconds(0.8));
+            pathTransition.setDuration(Duration.seconds(1.5));
             pathTransition.setPath(path);
-            pathTransition.setNode(square);
+            pathTransition.setNode(visualFrame);
             pathTransition.setOrientation(PathTransition.OrientationType.NONE);
             pathTransition.setCycleCount(1);
             pathTransition.setAutoReverse(false);
 
             pathTransition.setOnFinished(event -> {
-                simulationWorkspaceView.removeNode(square);
+                simulationWorkspaceView.removeNode(visualFrame);
                 forwardToNextDevice(networkConnection, frame);
             });
 
             pathTransition.play();
         });
+    }
+
+    public Rectangle createVisualFrame(Frame frame) {
+        Rectangle rectangle = new Rectangle(10, 10);
+
+        if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage) {
+            rectangle.setFill(Color.DARKRED);
+        } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage) {
+            rectangle.setFill(Color.RED);
+        } else if (frame.getPacket().getMessage() instanceof DhcpResponseMessage) {
+            rectangle.setFill(Color.ORANGE);
+        } else if (frame.getPacket().getMessage() instanceof DhcpAckMessage) {
+            rectangle.setFill(Color.YELLOW);
+        } else if (frame.getPacket().getMessage() instanceof StringMessage) {
+            rectangle.setFill(Color.BLUE);
+        }
+        return rectangle;
     }
 }
 
