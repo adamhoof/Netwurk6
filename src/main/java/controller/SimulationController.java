@@ -185,25 +185,29 @@ public class SimulationController {
     public void handleFrameOnSwitch(SwitchModel switchModel, NetworkConnection networkConnection, Frame frame) {
         System.out.printf("Received packet on SWITCH!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
         NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
-        if (frame.getDestinationMac().equals(MACAddress.ipv4Broadcast())) {
-            broadcastFrame(switchModel, connectedDevice, frame, false);
-            return;
-        }
-
         if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
-            broadcastFrame(switchModel, connectedDevice, frame, true);
-
+            for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
+                if ((switchConnection.getNetworkDeviceModel() == connectedDevice)) {
+                    //Do not forward frame to the source device
+                    switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
+                    continue;
+                }
+                outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
+                /*forwardToNextDevice(new NetworkConnection(switchModel,switchConnection.getNetworkDeviceModel()), frame);*/
+                /*sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
+            }
         } else {
             int outgoingPort = switchModel.getPort(frame.getDestinationMac());
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if (switchConnection.getNetworkDeviceModel() == connectedDevice) {
-                    //Retrieve ingoing port
-                    switchModel.learnMacAddress(connectedDevice.getMacAddress(), switchConnection.getPort());
+                    switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
                 }
             }
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if (switchConnection.getPort() == outgoingPort) {
-                    sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);
+                    outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
+                    /*forwardToNextDevice(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
+                    /*sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
                 }
             }
         }
