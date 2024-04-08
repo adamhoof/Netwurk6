@@ -7,4 +7,6 @@ public interface NetworkDevice {
     NetworkDeviceType getNetworkDeviceType();
 
     void setName(String name);
+
+    String getName();
 }

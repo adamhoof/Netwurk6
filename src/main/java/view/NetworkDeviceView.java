@@ -2,6 +2,7 @@ package view;
 
 import common.NetworkDevice;
 import common.NetworkDeviceType;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
@@ -16,9 +17,9 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
     private final ArrayList<String> labels;
     private final ImageView imageView;
 
-    private final UUID uuid;
+    private final Label name;
 
-    private String name;
+    private final UUID uuid;
 
 
     private final List<ConnectionLine> connections = new ArrayList<>();
@@ -26,9 +27,12 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
     public NetworkDeviceView(NetworkDeviceType networkDeviceType, Image image) {
         this.labels = new ArrayList<>();
         this.imageView = new ImageView(image);
+        this.name = new Label();
+        this.name.setStyle("-fx-text-fill: #FF0000; -fx-font-weight: bold;");
+        this.name.setLayoutY(this.getLayoutY());
         this.networkDeviceType = networkDeviceType;
         this.uuid = UUID.randomUUID();
-        this.getChildren().addAll(imageView);
+        this.getChildren().addAll(imageView, this.name);
     }
 
     public NetworkDeviceType getNetworkDeviceType() {
@@ -43,7 +47,11 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
     public abstract NetworkDeviceView deepCopy();
 
     public void setName(String name) {
-        this.name = name;
+        this.name.setText(name);
+    }
+
+    public String getName() {
+        return name.getText();
     }
 
     public void addConnectionLine(ConnectionLine line) {

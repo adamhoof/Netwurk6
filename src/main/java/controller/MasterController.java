@@ -30,25 +30,22 @@ public class MasterController {
         NetworkDeviceModel networkDeviceModel;
         switch (networkDevice.getNetworkDeviceType()) {
             case ROUTER:
-                RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
+                RouterModel routerModel = new RouterModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()),networkDevice.getName());
                 LanNetwork network = routerModel.createLanNetwork();
-                IPAddress routerIpAddress = networksController.reserveIpAddress(network);
-                RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel);
+                IPAddress routerIpAddress = networksController.reserveIpAddressInNetwork(network);
+                RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel, network);
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
-                routerModel.setName(AutoNameGenerator.generateRouterName());
                 routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
                 deviceStorage.add(routerInterface);
                 deviceStorage.addRouter(routerModel);
                 return;
             case SWITCH:
-                networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                networkDeviceModel.setName(AutoNameGenerator.generateSwitchName());
+                networkDeviceModel = new SwitchModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()),networkDevice.getName());
                 deviceStorage.add(networkDeviceModel);
                 break;
             case PC:
-                PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()));
-                pcModel.setName(AutoNameGenerator.generatePcName());
+                PCModel pcModel = new PCModel(networkDevice.getUuid(), new MACAddress(networkDevice.getUuid().toString()),networkDevice.getName());
                 deviceStorage.addPc(pcModel);
                 break;
             default:

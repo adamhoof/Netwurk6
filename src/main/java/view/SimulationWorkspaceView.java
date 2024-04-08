@@ -1,5 +1,6 @@
 package view;
 
+import common.AutoNameGenerator;
 import common.NetworkDevice;
 import controller.MasterController;
 import javafx.geometry.Point2D;
@@ -84,9 +85,9 @@ public class SimulationWorkspaceView {
         ImageView buttonIcon = new ImageView(icon);
         button.setGraphic(buttonIcon);
 
-        button.setOnAction(event -> {
+        button.setOnAction(buttonClickEvent -> {
             if (cursorFollowingDeviceHandler.isFollowing()) {
-                simulationWorkspace.getChildren().remove(cursorFollowingDeviceHandler.get());
+                removeNode(cursorFollowingDeviceHandler.get());
             }
             spawn(networkDeviceView);
         });
@@ -216,6 +217,11 @@ public class SimulationWorkspaceView {
         deepCopy.setOpacity(0.5);
         deepCopy.setImageViewFitWidth(imageSize);
         deepCopy.setImageViewFitHeight(imageSize);
+        switch (networkDeviceView.getNetworkDeviceType()) {
+            case ROUTER -> deepCopy.setName(AutoNameGenerator.generateRouterName());
+            case SWITCH -> deepCopy.setName(AutoNameGenerator.generateSwitchName());
+            case PC -> deepCopy.setName(AutoNameGenerator.generatePcName());
+        }
         cursorFollowingDeviceHandler.set(deepCopy);
     }
 
@@ -294,7 +300,7 @@ public class SimulationWorkspaceView {
         simulationWorkspace.getChildren().add(node);
     }
 
-    public void removeNode(Node node){
+    public void removeNode(Node node) {
         simulationWorkspace.getChildren().remove(node);
     }
 
