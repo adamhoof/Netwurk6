@@ -38,6 +38,14 @@ public class SimulationController {
         this.simulationWorkspaceView = simulationWorkspaceView;
     }
 
+    public Pair<NetworkConnection, Frame> receiveFrame() {
+        try {
+            return outboundQueue.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void startSimulation() {
         if (simulationRunning) {
             return;
@@ -125,26 +133,15 @@ public class SimulationController {
         outboundQueue.add(new Pair<>(networkConnection, ethernetFrame));
     }
 
-    public void sendDhcpDiscovery(NetworkConnection networkConnection, MACAddress sourceMac) {
-        sendPacket(networkConnection, sourceMac, MACAddress.ipv4Broadcast(), new Packet(null, null, new DhcpDiscoverMessage()));
-    }
-
-    public void sendArpRequest(NetworkConnection networkConnection, MACAddress senderMac, IPAddress senderIp, IPAddress targetIp) {
-        sendPacket(networkConnection, senderMac, MACAddress.ipv4Broadcast(), new Packet(senderIp, targetIp, new ArpRequestMessage()));
-    }
 
     public void startPacketProcessing() {
         threadPool.submit(() -> {
             while (simulationRunning) {
-                try {
-                    Pair<NetworkConnection, Frame> frameThroughNetworkConnection = outboundQueue.take();
-                    sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
-                    //TODO make this thread to work
-                    /*threadPool.submit(() -> forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue()));*/
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+                Pair<NetworkConnection, Frame> frameThroughNetworkConnection = receiveFrame();
+                /*threadPool.submit(() -> sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue()));*/
+                /*sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());*/
+                forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
+
             }
         });
     }
