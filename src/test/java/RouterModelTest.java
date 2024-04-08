@@ -17,7 +17,7 @@ public class RouterModelTest {
         routerModel.getLanNetworks().add(lanNetwork);
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
-        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()),routerModel);
+        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()), routerModel, lanNetwork);
         routerModel.getRouterInterfaces().put(lanNetwork, routerInterface);
 
         IPAddress expectedCurrentAvailableIp = new IPAddress(192, 168, 2, 0);

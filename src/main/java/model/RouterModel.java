@@ -12,7 +12,7 @@ public class RouterModel extends NetworkDeviceModel {
     private final IPAddress currentAvailableLanNetworkIp = new IPAddress(192, 168, 1, 0);
     private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
-    private final Map<Network, RouterInterface> routerInterfaces = new HashMap<>();
+    private final HashMap<Network, RouterInterface> routerInterfaces = new HashMap<>();
 
     private final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
 
@@ -68,7 +68,7 @@ public class RouterModel extends NetworkDeviceModel {
         lanNetworks.add(lanNetwork);
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
-        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()), this);
+        RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()), this, lanNetwork);
         routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
         routerInterfaces.put(lanNetwork, routerInterface);
 
@@ -125,12 +125,12 @@ public class RouterModel extends NetworkDeviceModel {
         if (networkDeviceModel instanceof PCModel pcModel) {
             RouterInterface routerInterface = getDirectConnectionLanInterface();
             routerInterface.addConnection(pcModel);
-            return networkDeviceModel.addConnection(routerInterface);
+            return pcModel.addConnection(routerInterface);
         } else if (networkDeviceModel instanceof SwitchModel switchModel) {
             LanNetwork lanNetwork = createLanNetwork();
             RouterInterface routerInterface = getNetworksRouterInterface(lanNetwork);
             routerInterface.addConnection(switchModel);
-            return networkDeviceModel.addConnection(routerInterface);
+            return switchModel.addConnection(routerInterface);
         }
         return true;
     }

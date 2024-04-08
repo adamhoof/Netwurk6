@@ -13,11 +13,14 @@ public class RouterInterface extends NetworkDeviceModel {
 
     private final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
 
-    public RouterInterface(UUID uuid, IPAddress ipAddress, MACAddress macAddress, RouterModel interfacesRouter) {
+    private final Network network;
+
+    public RouterInterface(UUID uuid, IPAddress ipAddress, MACAddress macAddress, RouterModel interfacesRouter, Network network) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER_INTERFACE);
         this.ipAddress = ipAddress;
         this.macAddress = macAddress;
         this.interfacesRouter = interfacesRouter;
+        this.network = network;
     }
 
     public IPAddress getIpAddress() {
@@ -31,5 +34,9 @@ public class RouterInterface extends NetworkDeviceModel {
     public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
         directConnections.add(networkDeviceModel);
         return true;
+    }
+
+    public Network getNetwork() {
+        return network;
     }
 }
