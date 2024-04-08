@@ -92,21 +92,37 @@ public class SimulationController {
         Random random = new Random();
         int randomIndex = random.nextInt(pcModels.size());
         PCModel initiatorPcModel = pcModels.get(randomIndex);
+        while (initiatorPcModel.isConfigurationInProgress() || initiatorPcModel.getConnection() == null) {
+            System.out.println("pc is in configuration process, picking another one");
+            randomIndex = random.nextInt(pcModels.size());
+            initiatorPcModel = pcModels.get(randomIndex);
+        }
 
         PCModel recipientPcModel = initiatorPcModel;
         while (initiatorPcModel == recipientPcModel) {
             randomIndex = random.nextInt(pcModels.size());
             recipientPcModel = pcModels.get(randomIndex);
         }
+        //TODO take a look whether the pc is in some router subnet => configure first, or if he has none (like only switch as the lan interface with no router anywhere) => allow no configuration to happen
         System.out.printf("%s wants to communicate with %s\n", initiatorPcModel, recipientPcModel);
         initiateCommunication(initiatorPcModel, recipientPcModel);
     }
 
     public void initiateCommunication(PCModel initiator, PCModel recipient) {
+        if (initiator == null || recipient == null) {
+            System.out.printf("initiator is %s, recipient %s is\n", initiator, recipient);
+            return;
+        }
         NetworkDeviceModel next = initiator.getConnection();
         if (!initiator.isConfigured()) {
             System.out.printf("Oh boi %s is not configured\n", initiator);
+            initiator.setConfigurationInProgress();
+            System.out.printf("Sending DHCP DISCOVERY from %s\n", initiator);
             sendDhcpDiscovery(new NetworkConnection(initiator, next), initiator.getMacAddress());
+        }
+
+        if (!recipient.isConfigured()) {
+            System.out.printf("%s not configured", recipient);
             return;
         }
 
@@ -239,6 +255,8 @@ public class SimulationController {
         }
     }
 
+    public void sendDhcpDiscovery(NetworkConnection networkConnection, MACAddress sourceMac) {
+        sendPacket(networkConnection, sourceMac, MACAddress.ipv4Broadcast(), new Packet(null, null, new DhcpDiscoverMessage(sourceMac)));
     }
 
     public void sendArpRequest(NetworkConnection networkConnection, MACAddress senderMac, IPAddress senderIp, IPAddress targetIp) {

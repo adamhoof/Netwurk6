@@ -1,17 +1,20 @@
 package model;
 
-import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 public class ArpCache {
-    ArrayList<ArpEntry> entries = new ArrayList<>();
+    private final Map<IPAddress, MACAddress> entries = new ConcurrentHashMap<>();
 
     public MACAddress getMAC(IPAddress ipAddress) {
-        for (ArpEntry arpEntry : entries) {
-            if (arpEntry.getIpAddress() != ipAddress) {
-                continue;
-            }
-            return arpEntry.getMac();
-        }
-        return null;
+        return entries.get(ipAddress);
+    }
+
+    public void addEntry(IPAddress ipAddress, MACAddress mac) {
+        entries.putIfAbsent(ipAddress, mac);
+    }
+
+    public Map<IPAddress, MACAddress> getEntriesSnapshot() {
+        return new ConcurrentHashMap<>(entries);
     }
 }

@@ -3,6 +3,7 @@ package model;
 import common.NetworkDeviceType;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PCModel extends NetworkDeviceModel {
     private IPAddress ipAddress;
@@ -12,7 +13,9 @@ public class PCModel extends NetworkDeviceModel {
     private SubnetMask subnetMask;
     private final ArpCache arpCache;
 
-    private boolean isConfigured = false;
+    private final AtomicBoolean isConfigured = new AtomicBoolean(false);
+
+    private final AtomicBoolean configurationInProgress = new AtomicBoolean(false);
 
     private NetworkDeviceModel connection;
 
@@ -24,14 +27,6 @@ public class PCModel extends NetworkDeviceModel {
     public PCModel(UUID uuid, MACAddress macAddress, String name) {
         super(uuid, macAddress, NetworkDeviceType.PC, name);
         this.arpCache = new ArpCache();
-    }
-
-    public void connectToNetwork(Network network, IPAddress ipAddress, IPAddress defaultGateway) {
-        this.network = network;
-        this.ipAddress = ipAddress;
-        this.defaultGateway = defaultGateway;
-        this.subnetMask = network.getSubnetMask();
-        isConfigured = true;
     }
 
     public Network getNetwork() {
@@ -55,7 +50,7 @@ public class PCModel extends NetworkDeviceModel {
     }
 
     public boolean isConfigured() {
-        return isConfigured;
+        return isConfigured.get();
     }
 
 
@@ -68,7 +63,28 @@ public class PCModel extends NetworkDeviceModel {
         return true;
     }
 
-    public NetworkDeviceModel getConnection(){
+    public NetworkDeviceModel getConnection() {
         return connection;
+    }
+
+   public boolean isConfigurationInProgress(){
+        return configurationInProgress.get();
+   }
+
+   public void setConfigurationInProgress(){this.configurationInProgress.set(true);}
+    public void configure(IPAddress ipAddress, IPAddress defaultGateway, SubnetMask subnetMask) {
+        this.ipAddress = ipAddress;
+        this.defaultGateway = defaultGateway;
+        this.subnetMask = subnetMask;
+        isConfigured.set(true);
+        configurationInProgress.set(false);
+    }
+
+    public void updateArp(IPAddress ipAddress, MACAddress macAddress) {
+        arpCache.addEntry(ipAddress, macAddress);
+    }
+
+    public MACAddress queryArp(IPAddress ipAddress) {
+        return getArpCache().getMAC(ipAddress);
     }
 }
