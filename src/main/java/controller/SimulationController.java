@@ -29,7 +29,7 @@ public class SimulationController {
 
     private final SimulationWorkspaceView simulationWorkspaceView;
 
-    private AtomicBoolean simulationRunning = new AtomicBoolean(false);
+    private final AtomicBoolean simulationRunning = new AtomicBoolean(false);
 
     public SimulationController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage storage, NetworksController networksController) {
         this.outboundQueue = new LinkedBlockingQueue<>();
@@ -53,7 +53,7 @@ public class SimulationController {
         }
         simulationRunning.set(true);
 
-        threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
+        /*threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);*/
         startPacketProcessing();
         threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
@@ -74,7 +74,7 @@ public class SimulationController {
             for (RouterModel connectedRouter : networksController.getRoutersRipConnections(router)) {
                 Network sharedNetwork = networksController.getSharedNetwork(router, connectedRouter);
                 if (sharedNetwork != null) {
-                    sendFrame(
+                    sendFrameWithAnimation(
                             new NetworkConnection(router.getNetworksRouterInterface(sharedNetwork), connectedRouter.getNetworksRouterInterface(sharedNetwork)),
                             new Frame(router.getMacAddress(), connectedRouter.getMacAddress(),
                                     new Packet(router.getNetworksRouterInterface(sharedNetwork).getIpAddress(), connectedRouter.getNetworksRouterInterface(sharedNetwork).getIpAddress(), new RipMessage(router.getRoutingTable()))));
@@ -107,7 +107,11 @@ public class SimulationController {
         }
         //TODO take a look whether the pc is in some router subnet => configure first, or if he has none (like only switch as the lan interface with no router anywhere) => allow no configuration to happen
         System.out.printf("%s wants to communicate with %s\n", initiatorPcModel, recipientPcModel);
-        initiateCommunication(initiatorPcModel, recipientPcModel);
+        PCModel finalInitiatorPcModel = initiatorPcModel;
+        PCModel finalRecipientPcModel = recipientPcModel;
+        threadPool.submit(() -> {
+            initiateCommunication(finalInitiatorPcModel, finalRecipientPcModel);
+        });
     }
 
     public void initiateCommunication(PCModel initiator, PCModel recipient) {
@@ -121,6 +125,7 @@ public class SimulationController {
             initiator.setConfigurationInProgress();
             System.out.printf("Sending DHCP DISCOVERY from %s\n", initiator);
             sendDhcpDiscovery(new NetworkConnection(initiator, next), initiator.getMacAddress());
+            return;
         }
 
         if (!recipient.isConfigured()) {
@@ -129,18 +134,18 @@ public class SimulationController {
         }
 
         if (networksController.isSameNetwork(initiator, recipient)) {
-            System.out.printf("%s and %s ARE on the same network", initiator, recipient);
-            MACAddress recipientMac = initiator.getArpCache().getMAC(recipient.getIpAddress());
+            System.out.printf("%s and %s ARE on the same network\n", initiator, recipient);
+            MACAddress recipientMac = initiator.queryArp(recipient.getIpAddress());
 
             if (recipientMac != null) {
-                System.out.printf("%s is sending packet request via %s", initiator, next);
-                sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), recipientMac, new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage()));
+                System.out.printf("%s is sending string message via %s\n", initiator, next);
+                sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), recipientMac, new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("googa")));
             } else {
-                System.out.printf("%s is sending arp request via %s", initiator, next);
+                System.out.printf("%s is sending arp request via %s\n", initiator, next);
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
-            System.out.printf("%s and %s AREN'T on the same network", initiator, recipient);
+            System.out.printf("%s and %s AREN'T on the same network\n", initiator, recipient);
             MACAddress defaultGatewayMac = initiator.getArpCache().getMAC(initiator.getDefaultGateway());
             if (defaultGatewayMac != null) {
                 sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), defaultGatewayMac, new Packet(initiator.getIpAddress(), initiator.getDefaultGateway(), new StringMessage()));
@@ -158,11 +163,12 @@ public class SimulationController {
 
     public void startPacketProcessing() {
         threadPool.submit(() -> {
-            while (simulationRunning) {
+            while (simulationRunning.get()) {
                 Pair<NetworkConnection, Frame> frameThroughNetworkConnection = receiveFrame();
                 /*threadPool.submit(() -> sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue()));*/
                 /*sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());*/
-                forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
+                sendFrameWithAnimation(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
+                /*forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());*/
 
             }
         });
@@ -181,8 +187,8 @@ public class SimulationController {
     }
 
     public void handleFrameOnPc(PCModel pc, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("Received packet on PC!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
-        if (frame.getDestinationMac() == pc.getMacAddress()) {
+        System.out.printf("%s received frame from %s\n", networkConnection.getEndDevice(), networkConnection.getStartDevice());
+        if (frame.getDestinationMac() == pc.getMacAddress() || frame.getPacket().getDestinationIp() == pc.getIpAddress()) {
             if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
                 System.out.printf("Hi i am %s and i received this message: %s\n", pc.getMacAddress(), stringMessage.getBody());
             } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage dhcpOfferMessage) {
@@ -196,16 +202,27 @@ public class SimulationController {
                         pc.getDefaultGateway(),
                         new DhcpResponseMessage());
             } else if (frame.getPacket().getMessage() instanceof DhcpAckMessage) {
-                System.out.printf("i %s received dhcp ack!", pc);
+                System.out.printf("i %s received dhcp ack!\n", pc);
                 System.out.printf("configuration state: %s\n", pc.isConfigured());
                 System.out.printf("configuration in progress: %s\n", pc.isConfigurationInProgress());
-                return;
+            } else if (frame.getPacket().getMessage() instanceof ArpRequestMessage) {
+                System.out.printf("i %s received arp request message\n", pc);
+                sendArpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
+                        pc.getMacAddress(),
+                        frame.getSourceMac(),
+                        pc.getIpAddress(),
+                        frame.getPacket().getSourceIp(),
+                        new ArpResponseMessage(pc.getMacAddress())
+                );
+            } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
+                System.out.printf("i %s received arp response message\n", pc);
+                pc.updateArp(frame.getPacket().getSourceIp(), arpResponseMessage.getRequestedMacAddress());
             }
         }
     }
 
     public void handleFrameOnSwitch(SwitchModel switchModel, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("Received packet on SWITCH!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
+        System.out.printf("%s received frame from %s\n", networkConnection.getEndDevice(), networkConnection.getStartDevice());
         NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
         if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
@@ -215,8 +232,6 @@ public class SimulationController {
                     continue;
                 }
                 outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
-                /*forwardToNextDevice(new NetworkConnection(switchModel,switchConnection.getNetworkDeviceModel()), frame);*/
-                /*sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
             }
         } else {
             int outgoingPort = switchModel.getPort(frame.getDestinationMac());
@@ -228,18 +243,16 @@ public class SimulationController {
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if (switchConnection.getPort() == outgoingPort) {
                     outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
-                    /*forwardToNextDevice(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
-                    /*sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);*/
                 }
             }
         }
     }
 
     public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("Received packet on ROUTER!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
+        System.out.printf("Received packet on ROUTER! ===>> Initiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
 
         if (frame.getPacket().getMessage() instanceof RipMessage ripMessage) {
-            System.out.printf("i %s received rip message from %s", routerInterface, networkConnection.getStartDevice());
+            System.out.printf("i %s received rip message from %s\n", routerInterface, networkConnection.getStartDevice());
             routerInterface.getInterfacesRouter().receiveRoutingTable(ripMessage.getRoutingTable(), frame.getPacket().getSourceIp());
         } else if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage dhcpDiscoverMessage) {
             IPAddress offeredIpAddress = networksController.reserveIpAddressInNetwork(routerInterface.getNetwork());
@@ -281,49 +294,62 @@ public class SimulationController {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpAckMessage));
     }
 
-    private void sendFrame(NetworkConnection networkConnection, Frame frame) {
+    public void sendArpResponse(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, ArpResponseMessage arpResponseMessage) {
+        sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, arpResponseMessage));
+    }
+
+    private void sendFrameWithAnimation(NetworkConnection networkConnection, Frame frame) {
         Platform.runLater(() -> {
-            NetworkDeviceModel animationStartNetworkDevice = networkConnection.getStartDevice();
-            NetworkDeviceModel animationEndNetworkDevice = networkConnection.getEndDevice();
+            try {
+                NetworkDeviceModel animationStartNetworkDevice = networkConnection.getStartDevice();
+                NetworkDeviceModel animationEndNetworkDevice = networkConnection.getEndDevice();
 
-            if (networkConnection.getStartDevice() instanceof RouterInterface routerInterface) {
-                animationStartNetworkDevice = routerInterface.getInterfacesRouter();
+                if (animationStartNetworkDevice instanceof RouterInterface routerInterfaceStart) {
+                    animationStartNetworkDevice = routerInterfaceStart.getInterfacesRouter();
+                }
+                if (animationEndNetworkDevice instanceof RouterInterface routerInterfaceEnd) {
+                    animationEndNetworkDevice = routerInterfaceEnd.getInterfacesRouter();
+                }
+
+                Rectangle visualFrame = createVisualFrame(frame);
+                simulationWorkspaceView.addNode(visualFrame);
+                PathTransition pathTransition = preparePathTransition(visualFrame, animationStartNetworkDevice, animationEndNetworkDevice);
+
+                pathTransition.setOnFinished(event -> {
+                    simulationWorkspaceView.removeNode(visualFrame);
+                    forwardToNextDevice(networkConnection, frame);
+                });
+
+                pathTransition.play();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            if (networkConnection.getEndDevice() instanceof RouterInterface routerInterface) {
-                animationEndNetworkDevice = routerInterface.getInterfacesRouter();
-            }
-
-            ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(animationStartNetworkDevice, animationEndNetworkDevice);
-
-            Rectangle visualFrame = createVisualFrame(frame);
-
-            simulationWorkspaceView.addNode(visualFrame);
-
-            Path path = new Path();
-            if (connectionLine.getStartDevice().getUuid() == animationStartNetworkDevice.getUuid()) {
-                path.getElements().add(new MoveTo(connectionLine.getStartX(), connectionLine.getStartY()));
-                path.getElements().add(new LineTo(connectionLine.getEndX(), connectionLine.getEndY()));
-            } else if (connectionLine.getStartDevice().getUuid() == animationEndNetworkDevice.getUuid()) {
-                path.getElements().add(new MoveTo(connectionLine.getEndX(), connectionLine.getEndY()));
-                path.getElements().add(new LineTo(connectionLine.getStartX(), connectionLine.getStartY()));
-            }
-
-            PathTransition pathTransition = new PathTransition();
-            pathTransition.setDuration(Duration.seconds(1.5));
-            pathTransition.setPath(path);
-            pathTransition.setNode(visualFrame);
-            pathTransition.setOrientation(PathTransition.OrientationType.NONE);
-            pathTransition.setCycleCount(1);
-            pathTransition.setAutoReverse(false);
-
-            pathTransition.setOnFinished(event -> {
-                simulationWorkspaceView.removeNode(visualFrame);
-                forwardToNextDevice(networkConnection, frame);
-            });
-
-            pathTransition.play();
         });
     }
+
+    private PathTransition preparePathTransition(Rectangle visualFrame, NetworkDeviceModel startDevice, NetworkDeviceModel endDevice) {
+        ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(startDevice, endDevice);
+
+        Path path = new Path();
+        // Set up the path based on the start and end points of the connection line.
+        if (connectionLine.getStartDevice().getUuid().equals(startDevice.getUuid())) {
+            path.getElements().add(new MoveTo(connectionLine.getStartX(), connectionLine.getStartY()));
+            path.getElements().add(new LineTo(connectionLine.getEndX(), connectionLine.getEndY()));
+        } else {
+            path.getElements().add(new MoveTo(connectionLine.getEndX(), connectionLine.getEndY()));
+            path.getElements().add(new LineTo(connectionLine.getStartX(), connectionLine.getStartY()));
+        }
+
+        PathTransition pathTransition = new PathTransition();
+        pathTransition.setDuration(Duration.seconds(0.5));
+        pathTransition.setPath(path);
+        pathTransition.setNode(visualFrame);
+        pathTransition.setCycleCount(1);
+        pathTransition.setAutoReverse(false);
+
+        return pathTransition;
+    }
+
 
     public Rectangle createVisualFrame(Frame frame) {
         Rectangle rectangle = new Rectangle(10, 10);
