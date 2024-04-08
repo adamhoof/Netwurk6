@@ -162,6 +162,21 @@ public class SimulationController {
         if (frame.getDestinationMac() == pc.getMacAddress()) {
             if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
                 System.out.printf("Hi i am %s and i received this message: %s\n", pc.getMacAddress(), stringMessage.getBody());
+            } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage dhcpOfferMessage) {
+                System.out.println("I received dhcp offer!");
+                pc.configure(dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getSubnetMask());
+                pc.updateArp(dhcpOfferMessage.getDefaultGateway(), frame.getSourceMac());
+                sendDhcpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
+                        pc.getMacAddress(),
+                        pc.queryArp(pc.getDefaultGateway()),
+                        pc.getIpAddress(),
+                        pc.getDefaultGateway(),
+                        new DhcpResponseMessage());
+            } else if (frame.getPacket().getMessage() instanceof DhcpAckMessage) {
+                System.out.printf("i %s received dhcp ack!", pc);
+                System.out.printf("configuration state: %s\n", pc.isConfigured());
+                System.out.printf("configuration in progress: %s\n", pc.isConfigurationInProgress());
+                return;
             }
         }
     }
@@ -194,18 +209,47 @@ public class SimulationController {
     }
 
     public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
+        System.out.printf("Received packet on ROUTER!\nInitiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
+
+        if (frame.getPacket().getMessage() instanceof RipMessage ripMessage) {
+            System.out.printf("i %s received rip message from %s", routerInterface, networkConnection.getStartDevice());
+            routerInterface.getInterfacesRouter().receiveRoutingTable(ripMessage.getRoutingTable(), frame.getPacket().getSourceIp());
+        } else if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage dhcpDiscoverMessage) {
+            IPAddress offeredIpAddress = networksController.reserveIpAddressInNetwork(routerInterface.getNetwork());
+            IPAddress defaultGateway = routerInterface.getIpAddress();
+            SubnetMask subnetMask = routerInterface.getNetwork().getSubnetMask();
+            sendDhcpOffer(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
+                    routerInterface.getMacAddress(),
+                    dhcpDiscoverMessage.getSourceMac(),
+                    routerInterface.getIpAddress(),
+                    new DhcpOfferMessage(offeredIpAddress, defaultGateway, subnetMask));
+        } else if (frame.getPacket().getMessage() instanceof DhcpResponseMessage) {
+            sendDhcpAck(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
+                    routerInterface.getMacAddress(),
+                    frame.getSourceMac(),
+                    routerInterface.getIpAddress(),
+                    frame.getPacket().getSourceIp(),
+                    new DhcpAckMessage()
+            );
+        }
+    }
 
     }
 
-    private void broadcastFrame(SwitchModel switchModel, NetworkDeviceModel directlyConnectedDevice, Frame frame, boolean learnSourceDeviceMac) {
-        for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
-            if ((switchConnection.getNetworkDeviceModel() == directlyConnectedDevice) && learnSourceDeviceMac) {
-                //Do not forward frame to the source device but learn it's port
-                switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
-                continue;
-            }
-            sendFrame(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame);
-        }
+    public void sendArpRequest(NetworkConnection networkConnection, MACAddress senderMac, IPAddress senderIp, IPAddress targetIp) {
+        sendPacket(networkConnection, senderMac, MACAddress.ipv4Broadcast(), new Packet(senderIp, targetIp, new ArpRequestMessage()));
+    }
+
+    public void sendDhcpOffer(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, DhcpOfferMessage dhcpOfferMessage) {
+        sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, IPAddress.nullIpAddress(), dhcpOfferMessage));
+    }
+
+    public void sendDhcpResponse(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, DhcpResponseMessage dhcpResponseMessage) {
+        sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpResponseMessage));
+    }
+
+    public void sendDhcpAck(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, DhcpAckMessage dhcpAckMessage) {
+        sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpAckMessage));
     }
 
     private void sendFrame(NetworkConnection networkConnection, Frame frame) {

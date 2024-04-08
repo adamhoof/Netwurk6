@@ -1,4 +1,4 @@
 package model;
 
-public class DhcpAckMessage {
+public class DhcpAckMessage implements Message {
 }

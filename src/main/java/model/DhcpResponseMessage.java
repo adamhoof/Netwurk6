@@ -1,4 +1,5 @@
 package model;
 
-public class DhcpResponseMessage {
+public class DhcpResponseMessage implements Message {
+
 }

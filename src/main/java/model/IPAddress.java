@@ -62,10 +62,14 @@ public class IPAddress {
         for (int octet : octets) {
             stringBuilder.append(octet);
             counter++;
-            if (counter < octets.length){
+            if (counter < octets.length) {
                 stringBuilder.append(".");
             }
         }
         return stringBuilder.toString().stripTrailing();
+    }
+
+    public static IPAddress nullIpAddress() {
+        return new IPAddress(0, 0, 0, 0);
     }
 }
