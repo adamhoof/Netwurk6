@@ -1,14 +1,15 @@
 package model;
 
 public class DhcpOfferMessage implements Message {
-    private IPAddress offeredIpAddress;
-    private IPAddress defaultGateway;
+    private final IPAddress offeredIpAddress;
+    private final IPAddress defaultGateway;
 
-    private SubnetMask subnetMask;
+    private final SubnetMask subnetMask;
 
     public DhcpOfferMessage(IPAddress offeredIpAddress, IPAddress defaultGateway, SubnetMask subnetMask) {
         this.offeredIpAddress = offeredIpAddress;
         this.defaultGateway = defaultGateway;
+        this.subnetMask = subnetMask;
     }
 
     public IPAddress getOfferedIpAddress() {
