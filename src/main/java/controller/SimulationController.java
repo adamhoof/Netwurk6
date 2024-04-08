@@ -84,6 +84,7 @@ public class SimulationController {
     }
 
     public void pickRandomLanCommunication() {
+        System.out.println("Picking PC communication");
         ArrayList<PCModel> pcModels = storage.getPcModels();
         if (pcModels.isEmpty()) {
             System.out.println("No pc models available");
@@ -127,14 +128,18 @@ public class SimulationController {
         }
 
         if (networksController.isSameNetwork(initiator, recipient)) {
+            System.out.printf("%s and %s ARE on the same network", initiator, recipient);
             MACAddress recipientMac = initiator.getArpCache().getMAC(recipient.getIpAddress());
 
             if (recipientMac != null) {
+                System.out.printf("%s is sending packet request via %s", initiator, next);
                 sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), recipientMac, new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage()));
             } else {
+                System.out.printf("%s is sending arp request via %s", initiator, next);
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
+            System.out.printf("%s and %s AREN'T on the same network", initiator, recipient);
             MACAddress defaultGatewayMac = initiator.getArpCache().getMAC(initiator.getDefaultGateway());
             if (defaultGatewayMac != null) {
                 sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), defaultGatewayMac, new Packet(initiator.getIpAddress(), initiator.getDefaultGateway(), new StringMessage()));
