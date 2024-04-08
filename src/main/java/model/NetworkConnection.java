@@ -4,8 +4,8 @@ import common.Connection;
 
 public class NetworkConnection implements Connection {
 
-    NetworkDeviceModel startDevice;
-    NetworkDeviceModel endDevice;
+    private final NetworkDeviceModel startDevice;
+    private final NetworkDeviceModel endDevice;
 
     public NetworkConnection(NetworkDeviceModel first, NetworkDeviceModel second){
         startDevice = first;

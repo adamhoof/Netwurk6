@@ -16,6 +16,7 @@ import view.SimulationWorkspaceView;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SimulationController {
     private final ScheduledExecutorService threadPool;
@@ -28,7 +29,7 @@ public class SimulationController {
 
     private final SimulationWorkspaceView simulationWorkspaceView;
 
-    private boolean simulationRunning = false;
+    private AtomicBoolean simulationRunning = new AtomicBoolean(false);
 
     public SimulationController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage storage, NetworksController networksController) {
         this.outboundQueue = new LinkedBlockingQueue<>();
@@ -47,10 +48,10 @@ public class SimulationController {
     }
 
     public void startSimulation() {
-        if (simulationRunning) {
+        if (simulationRunning.get()) {
             return;
         }
-        simulationRunning = true;
+        simulationRunning.set(true);
 
         threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
         startPacketProcessing();

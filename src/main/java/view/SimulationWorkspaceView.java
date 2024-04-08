@@ -41,7 +41,7 @@ public class SimulationWorkspaceView {
         initializeView();
     }
 
-    public ConnectionLine getConnectionLine(NetworkDevice first, NetworkDevice second) {
+    public synchronized ConnectionLine getConnectionLine(NetworkDevice first, NetworkDevice second) {
         for (ConnectionLine connectionLine : connectionLines) {
             if ((connectionLine.getStartDevice().getUuid() == first.getUuid() && connectionLine.getEndDevice().getUuid() == second.getUuid())
                     || connectionLine.getStartDevice().getUuid() == second.getUuid() && connectionLine.getEndDevice().getUuid() == first.getUuid()) {
@@ -300,7 +300,7 @@ public class SimulationWorkspaceView {
         simulationWorkspace.getChildren().add(node);
     }
 
-    public void removeNode(Node node) {
+    public synchronized void removeNode(Node node) {
         simulationWorkspace.getChildren().remove(node);
     }
 

@@ -1,15 +1,15 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class NetworkDeviceStorage {
     Map<UUID, NetworkDeviceModel> networkDeviceModels = new HashMap<>();
     ArrayList<RouterModel> routerModels = new ArrayList<>();
 
-    ArrayList<PCModel> pcModels = new ArrayList<>();
+    List<PCModel> pcModels = new CopyOnWriteArrayList<>();
+
+
 
     public void add(NetworkDeviceModel networkDeviceModel) {
         networkDeviceModels.put(networkDeviceModel.getUuid(), networkDeviceModel);
@@ -57,9 +57,7 @@ public class NetworkDeviceStorage {
         }
         return networkDeviceModels.get(uuidFromMac);
     }
-
     public ArrayList<PCModel> getPcModels() {
-        return pcModels;
+        return new ArrayList<>(pcModels);
     }
-
 }
