@@ -1,5 +1,6 @@
 import controller.MasterController;
 import controller.NetworksController;
+import controller.SimulationController;
 import javafx.scene.image.Image;
 import model.MACAddress;
 import model.NetworkDeviceStorage;
@@ -20,7 +21,7 @@ public class MasterControllerTest {
     public void addConnection_nonExistingDevice_returnFalseConnectionNull() {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        MasterController masterController = new MasterController(mockView, storage, new NetworksController());
+        MasterController masterController = new MasterController(mockView, storage, new NetworksController(), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
         PCView pcView = new PCView(mockImage);
@@ -36,7 +37,7 @@ public class MasterControllerTest {
     public void addConnection_bothExistAndAcceptConnection_returnTrueConnectionNotNull() {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class));
+        MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
         RouterView routerView = new RouterView(mockImage);
@@ -56,7 +57,7 @@ public class MasterControllerTest {
     public void addConnection_pcDoesNotAcceptConnections_returnFalse() {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class));
+        MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
         RouterView routerView = new RouterView(mockImage);

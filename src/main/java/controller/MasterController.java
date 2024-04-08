@@ -18,12 +18,12 @@ public class MasterController {
 
     SimulationController simulationController;
 
-    public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController) {
+    public MasterController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage deviceStorage, NetworksController networksController, SimulationController simulationController) {
         this.simulationWorkspaceView = simulationWorkspaceView;
         this.simulationWorkspaceView.setController(this);
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
-        simulationController = new SimulationController(simulationWorkspaceView, deviceStorage, networksController);
+        this.simulationController = simulationController;
     }
 
     public void addDevice(NetworkDevice networkDevice) {
