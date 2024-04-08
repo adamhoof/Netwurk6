@@ -44,17 +44,17 @@ public class NetworksController {
         return network;
     }
 
-    public IPAddress reserveIpAddress(Network network) {
+    public IPAddress reserveIpAddressInNetwork(Network network) {
         return network.getNextAvailableIpAddress();
     }
 
     public void createWanLink(RouterModel first, RouterModel second) {
         WanNetwork network = createDefaultWanNetwork();
-        IPAddress firstRouterIpAddress = reserveIpAddress(network);
-        IPAddress secondRouterIpAddress = reserveIpAddress(network);
+        IPAddress firstRouterIpAddress = reserveIpAddressInNetwork(network);
+        IPAddress secondRouterIpAddress = reserveIpAddressInNetwork(network);
 
-        first.addRouterInterface(new RouterInterface(UUID.randomUUID(), firstRouterIpAddress, new MACAddress(UUID.randomUUID().toString()), first), network);
-        second.addRouterInterface(new RouterInterface(UUID.randomUUID(), secondRouterIpAddress, new MACAddress(UUID.randomUUID().toString()), second), network);
+        first.addRouterInterface(new RouterInterface(UUID.randomUUID(), firstRouterIpAddress, new MACAddress(UUID.randomUUID().toString()), first, network), network);
+        second.addRouterInterface(new RouterInterface(UUID.randomUUID(), secondRouterIpAddress, new MACAddress(UUID.randomUUID().toString()), second, network), network);
 
         first.appendRoutingTable(new RouteEntry(network, firstRouterIpAddress, 0));
         second.appendRoutingTable(new RouteEntry(network, secondRouterIpAddress, 0));
@@ -72,12 +72,6 @@ public class NetworksController {
             routersRipConnections.put(routerModel, new ArrayList<>());
         }
         return routersRipConnections.get(routerModel);
-    }
-
-    public void connectPcToNetwork(PCModel pcModel, Network network, IPAddress defaultGateway) {
-        IPAddress ipAddress = reserveIpAddress(network);
-        network.addDevice(pcModel);
-        pcModel.connectToNetwork(network, ipAddress, defaultGateway);
     }
 
     public SubnetMask getDefaultWanRouterLinkSubnetMask() {
@@ -99,4 +93,7 @@ public class NetworksController {
         return initiatorNetworkPortion == recipientNetworkPortion;
     }
 
+    public ArrayList<Network> getNetworks() {
+        return networks;
+    }
 }
