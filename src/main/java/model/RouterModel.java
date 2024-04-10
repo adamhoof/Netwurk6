@@ -5,6 +5,8 @@ import common.NetworkDeviceType;
 import javafx.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 public class RouterModel extends NetworkDeviceModel {
     private final RoutingTable routingTable;
@@ -12,18 +14,24 @@ public class RouterModel extends NetworkDeviceModel {
     private final IPAddress currentAvailableLanNetworkIp = new IPAddress(192, 168, 1, 0);
     private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
-    private final HashMap<Network, RouterInterface> routerInterfaces = new HashMap<>();
+    private final ConcurrentHashMap<Network, RouterInterface> routerInterfaces = new ConcurrentHashMap<>();
+    private final ArpCache arpCache;
+    private final ConcurrentHashMap<IPAddress, CountDownLatch> arpLatches;
 
     private final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
 
     public RouterModel(UUID uuid, MACAddress macAddress) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER);
         this.routingTable = new RoutingTable();
+        this.arpCache = new ArpCache();
+        this.arpLatches = new ConcurrentHashMap<>();
     }
 
     public RouterModel(UUID uuid, MACAddress macAddress, String name) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER, name);
         this.routingTable = new RoutingTable();
+        this.arpCache = new ArpCache();
+        this.arpLatches = new ConcurrentHashMap<>();
     }
 
     public void appendRoutingTable(RouteEntry routeEntry) {
@@ -54,7 +62,7 @@ public class RouterModel extends NetworkDeviceModel {
         }
     }
 
-    public void receiveRoutingTable(RoutingTable receivedRoutingTable, IPAddress sourceIPAddress) {
+    public void updateRoutingTable(RoutingTable receivedRoutingTable, IPAddress sourceIPAddress) {
         for (RouteEntry entry : receivedRoutingTable.getEntries()) {
             processReceivedEntry(entry, sourceIPAddress);
         }
@@ -103,7 +111,7 @@ public class RouterModel extends NetworkDeviceModel {
         routerInterfaces.put(network, routerInterface);
     }
 
-    public Map<Network, RouterInterface> getRouterInterfaces() {
+    public ConcurrentHashMap<Network, RouterInterface> getRouterInterfaces() {
         return routerInterfaces;
     }
 
@@ -133,5 +141,28 @@ public class RouterModel extends NetworkDeviceModel {
             return switchModel.addConnection(routerInterface);
         }
         return true;
+    }
+
+    public void updateArp(IPAddress ipAddress, MACAddress macAddress) {
+        arpCache.addEntry(ipAddress, macAddress);
+    }
+
+    public MACAddress queryArp(IPAddress ipAddress) {
+        return arpCache.getMAC(ipAddress);
+    }
+
+    public void setArpLatch(IPAddress waitingForIpAddress, CountDownLatch countDownLatch) {
+        arpLatches.put(waitingForIpAddress, countDownLatch);
+    }
+
+    public void removeIpAssociatedLatch(IPAddress ipAddress) {
+        CountDownLatch latch = arpLatches.get(ipAddress);
+        if (latch != null) {
+            arpLatches.remove(ipAddress);
+        }
+    }
+
+    public CountDownLatch getIpAssociatedLatch(IPAddress ipAddress) {
+        return arpLatches.get(ipAddress);
     }
 }

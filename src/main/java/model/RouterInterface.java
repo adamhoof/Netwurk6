@@ -36,6 +36,10 @@ public class RouterInterface extends NetworkDeviceModel {
         return true;
     }
 
+    public NetworkDeviceModel getFirstConnectedDevice(){
+        return directConnections.iterator().next();
+    }
+
     public Network getNetwork() {
         return network;
     }
