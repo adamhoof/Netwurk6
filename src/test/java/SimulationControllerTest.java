@@ -92,21 +92,21 @@ public class SimulationControllerTest {
 
         //receive frame from pc0 to switch0
         Pair<NetworkConnection, Frame> framePair = simulationController.receiveFrame();
-        Assertions.assertSame(pc0,framePair.getKey().getStartDevice());
-        Assertions.assertSame(sw0,framePair.getKey().getEndDevice());
+        Assertions.assertSame(pc0, framePair.getKey().getStartDevice());
+        Assertions.assertSame(sw0, framePair.getKey().getEndDevice());
 
         //forward from switch0 to switch1
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
-        Assertions.assertSame(sw0,framePair.getKey().getStartDevice());
-        Assertions.assertSame(sw1,framePair.getKey().getEndDevice());
+        Assertions.assertSame(sw0, framePair.getKey().getStartDevice());
+        Assertions.assertSame(sw1, framePair.getKey().getEndDevice());
         Assertions.assertTrue(sw0.knowsMacAddress(pc0.getMacAddress()));
 
         //forward from switch1 to pc1
-        simulationController.forwardToNextDevice(framePair.getKey(),framePair.getValue());
+        simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
-        Assertions.assertSame(sw1,framePair.getKey().getStartDevice());
-        Assertions.assertSame(pc1,framePair.getKey().getEndDevice());
+        Assertions.assertSame(sw1, framePair.getKey().getStartDevice());
+        Assertions.assertSame(pc1, framePair.getKey().getEndDevice());
         Assertions.assertFalse(sw1.knowsMacAddress(pc1.getMacAddress()));
         Assertions.assertTrue(sw1.knowsMacAddress(pc0.getMacAddress()));
     }
@@ -158,7 +158,7 @@ public class SimulationControllerTest {
         Assertions.assertEquals(framePair.getKey().getEndDevice(), sw);
         Assertions.assertTrue(pcModel.isConfigurationInProgress());
 
-        //Switch broadcast communication to pc2 and router, ignore pc2
+        //Switch broadcast communication to pc2 and router, pc2 ignore
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         //If pc2 is the ony who got it first, throw the frame away and get the one directed to router interface instead
@@ -191,5 +191,75 @@ public class SimulationControllerTest {
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         simulationController.receiveFrame();
         Assertions.assertTrue(pcModel.isConfigured());
+    }
+
+    @Test
+    public void testDhcpConfigurationForPcsOnDifferentSubnets() {
+        // Initialize controllers and mock view
+        NetworksController networksController = new NetworksController();
+        NetworkDeviceStorage storage = new NetworkDeviceStorage();
+        SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
+        SimulationController simulationController = new SimulationController(mockView, storage, networksController);
+        MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
+
+        // Setup devices
+        UUID pc0Uuid = UUID.randomUUID();
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.generatePcName());
+        UUID pc1Uuid = UUID.randomUUID();
+        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.generatePcName());
+        UUID sw0Uuid = UUID.randomUUID();
+        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        UUID r0Uuid = UUID.randomUUID();
+        RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.generateRouterName());
+
+        // Add devices to master controller and connect them
+        masterController.addDevice(pc0);
+        masterController.addDevice(pc1);
+        masterController.addDevice(sw0);
+        masterController.addDevice(r0);
+        Assertions.assertTrue(masterController.addConnection(sw0, pc0));
+        Assertions.assertTrue(masterController.addConnection(r0, sw0));
+        Assertions.assertTrue(masterController.addConnection(r0, pc1));
+
+        // Refresh device instances
+        pc0 = storage.getPcModel(pc0.getUuid());
+        pc1 = storage.getPcModel(pc1.getUuid());
+        sw0 = (SwitchModel) storage.get(sw0.getUuid());
+        r0 = storage.getRouterModel(r0.getUuid());
+
+        Assertions.assertEquals(2, r0.getRouterInterfaces().size());
+
+        // Start the DHCP process for pc0
+        simulationController.sendDhcpDiscovery(new NetworkConnection(pc0, pc0.getConnection()), pc0.getMacAddress());
+        Pair<NetworkConnection, Frame> framePair;
+
+        // Process frames until DHCP ACK is received by pc0
+        while (true) {
+            framePair = simulationController.receiveFrame();
+            NetworkDeviceModel receiver = framePair.getKey().getEndDevice();
+            Frame frame = framePair.getValue();
+
+            if (frame.getPacket().getMessage() instanceof DhcpAckMessage && receiver.equals(pc0)) {
+                break; // DHCP process completed for pc0
+            }
+            simulationController.forwardToNextDevice(framePair.getKey(), frame);
+        }
+        Assertions.assertTrue(pc0.isConfigured());
+
+        // Start the DHCP process for pc1
+        simulationController.sendDhcpDiscovery(new NetworkConnection(pc1, pc1.getConnection()), pc1.getMacAddress());
+
+        // Process frames until DHCP ACK is received by pc1
+        while (true) {
+            framePair = simulationController.receiveFrame();
+            NetworkDeviceModel receiver = framePair.getKey().getEndDevice();
+            Frame frame = framePair.getValue();
+
+            if (frame.getPacket().getMessage() instanceof DhcpAckMessage && receiver.equals(pc1)) {
+                break; // DHCP process completed for pc1
+            }
+            simulationController.forwardToNextDevice(framePair.getKey(), frame);
+        }
+        Assertions.assertTrue(pc1.isConfigured());
     }
 }
