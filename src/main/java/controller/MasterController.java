@@ -34,9 +34,9 @@ public class MasterController {
                 LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddressInNetwork(network);
                 RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel, network);
+                routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
-                routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
                 deviceStorage.add(routerInterface);
                 deviceStorage.addRouter(routerModel);
                 return;
@@ -111,5 +111,21 @@ public class MasterController {
 
     public void startSimulation() {
         simulationController.startSimulation();
+    }
+
+    public boolean simulationStarted(){
+        return simulationController.simulationStarted();
+    }
+
+    public void resumeSimulation(){
+        simulationController.resumeSimulation();
+    }
+
+    public void pauseSimulation(){
+        simulationController.pauseSimulation();
+    }
+
+    public boolean simulationPaused(){
+        return simulationController.isPaused();
     }
 }

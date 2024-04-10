@@ -10,6 +10,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import model.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import view.ConnectionLine;
 import view.SimulationWorkspaceView;
 
@@ -29,7 +31,16 @@ public class SimulationController {
 
     private final SimulationWorkspaceView simulationWorkspaceView;
 
-    private final AtomicBoolean simulationRunning = new AtomicBoolean(false);
+    private final AtomicBoolean simulationStarted = new AtomicBoolean(false);
+
+    private final AtomicBoolean isPaused = new AtomicBoolean(true);
+
+    private final Semaphore pauseSemaphore = new Semaphore(1);
+
+    private ScheduledFuture<?> randomCommunicationTaskHandle;
+    private ScheduledFuture<?> ripTaskHandle;
+
+    private static final Logger logger = LogManager.getLogger(SimulationController.class);
 
     public SimulationController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage storage, NetworksController networksController) {
         this.outboundQueue = new LinkedBlockingQueue<>();
@@ -48,25 +59,47 @@ public class SimulationController {
     }
 
     public void startSimulation() {
-        if (simulationRunning.get()) {
+        if (simulationStarted.get()) {
             return;
         }
-        simulationRunning.set(true);
+        isPaused.set(false);
+        simulationStarted.set(true);
 
-        /*threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);*/
+        /*ripTaskHandle =threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);*/
         startPacketProcessing();
-        threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
+        randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
 
-    public void stopSimulation() {
-        threadPool.shutdown();
-        try {
-            if (!threadPool.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-                threadPool.shutdownNow();
+    private void checkForPause() {
+        if (isPaused.get()) {
+            try {
+                pauseSemaphore.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        } catch (InterruptedException e) {
-            threadPool.shutdownNow();
         }
+    }
+
+    public void pauseSimulation() {
+        if (isPaused.get()) {
+            return;
+        }
+        isPaused.set(true);
+        pauseSemaphore.acquireUninterruptibly();
+
+        if (ripTaskHandle != null) {
+            ripTaskHandle.cancel(true);
+        }
+        if (randomCommunicationTaskHandle != null) {
+            randomCommunicationTaskHandle.cancel(true);
+        }
+    }
+
+    public void resumeSimulation() {
+        isPaused.set(false);
+        pauseSemaphore.release();
+        ripTaskHandle = threadPool.scheduleAtFixedRate(this::startRip, 10, 30, TimeUnit.SECONDS);
+        randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 5, 10, TimeUnit.SECONDS);
     }
 
     private void startRip() {
@@ -85,17 +118,17 @@ public class SimulationController {
     }
 
     public void pickRandomLanCommunication() {
-        System.out.println("Picking PC communication");
+        logger.debug("Picking PC communication");
         ArrayList<PCModel> pcModels = storage.getPcModels();
         if (pcModels.isEmpty()) {
-            System.out.println("No pc models available");
+            logger.warn("No pc models available");
             return;
         }
         Random random = new Random();
         int randomIndex = random.nextInt(pcModels.size());
         PCModel initiatorPcModel = pcModels.get(randomIndex);
         while (initiatorPcModel.isConfigurationInProgress() || initiatorPcModel.getConnection() == null) {
-            System.out.println("pc is in configuration process, picking another one");
+            logger.debug("Initiator {} is in configuration process, picking another one", initiatorPcModel);
             randomIndex = random.nextInt(pcModels.size());
             initiatorPcModel = pcModels.get(randomIndex);
         }
@@ -106,7 +139,7 @@ public class SimulationController {
             recipientPcModel = pcModels.get(randomIndex);
         }
         //TODO take a look whether the pc is in some router subnet => configure first, or if he has none (like only switch as the lan interface with no router anywhere) => allow no configuration to happen
-        System.out.printf("%s wants to communicate with %s\n", initiatorPcModel, recipientPcModel);
+        logger.debug("Initiator {} wants to communicate with recipient {}", initiatorPcModel, recipientPcModel);
         PCModel finalInitiatorPcModel = initiatorPcModel;
         PCModel finalRecipientPcModel = recipientPcModel;
         threadPool.submit(() -> {
@@ -116,41 +149,51 @@ public class SimulationController {
 
     public void initiateCommunication(PCModel initiator, PCModel recipient) {
         if (initiator == null || recipient == null) {
-            System.out.printf("initiator is %s, recipient %s is\n", initiator, recipient);
+            logger.fatal("initiator is {}, recipient {} is", initiator, recipient);
             return;
         }
+
+        logger.debug("Initiating communication, initiator: {}, recipient {}", initiator, recipient);
+
         NetworkDeviceModel next = initiator.getConnection();
         if (!initiator.isConfigured()) {
-            System.out.printf("Oh boi %s is not configured\n", initiator);
+            logger.info("initiator {} is not configured => sending DHCP discovery", initiator);
             initiator.setConfigurationInProgress();
-            System.out.printf("Sending DHCP DISCOVERY from %s\n", initiator);
             sendDhcpDiscovery(new NetworkConnection(initiator, next), initiator.getMacAddress());
             return;
         }
 
         if (!recipient.isConfigured()) {
-            System.out.printf("%s not configured", recipient);
+            logger.debug("Recipient {} is not configured", recipient);
             return;
         }
 
         if (networksController.isSameNetwork(initiator, recipient)) {
-            System.out.printf("%s and %s ARE on the same network\n", initiator, recipient);
+            logger.warn("Initiator {}, ip {} and recipient {}, ip {} ARE on the same network", initiator, initiator.getIpAddress(), recipient, recipient.getIpAddress());
             MACAddress recipientMac = initiator.queryArp(recipient.getIpAddress());
 
             if (recipientMac != null) {
-                System.out.printf("%s is sending string message via %s\n", initiator, next);
+                logger.info("Initiator {}, ip {} KNOWS recipient mac, sending direct string message, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator, next);
                 sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), recipientMac, new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("googa")));
             } else {
-                System.out.printf("%s is sending arp request via %s\n", initiator, next);
+                logger.info("Initiator DOESN'T KNOW recipient mac, sending ARP request, network communication: {} -> {}", initiator, next);
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
-            System.out.printf("%s and %s AREN'T on the same network\n", initiator, recipient);
-            MACAddress defaultGatewayMac = initiator.getArpCache().getMAC(initiator.getDefaultGateway());
+            logger.warn("Initiator {}, ip {} and recipient {}, ip {} AREN'T on the same network", initiator, initiator.getIpAddress(), recipient, recipient.getIpAddress());
+            MACAddress defaultGatewayMac = initiator.queryArp(initiator.getDefaultGateway());
             if (defaultGatewayMac != null) {
-                sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), defaultGatewayMac, new Packet(initiator.getIpAddress(), initiator.getDefaultGateway(), new StringMessage()));
+                logger.info("Initiator {}, ip {} KNOWS default gateway mac (ip {}), sending string message, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator.getDefaultGateway(), initiator, next);
+                sendPacket(new NetworkConnection(initiator, next),
+                        initiator.getMacAddress(),
+                        defaultGatewayMac,
+                        new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("fuck")));
             } else {
-                sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), initiator.getDefaultGateway());
+                logger.info("Initiator {}, ip {} DOESN'T KNOW default gateway mac, sending arp request, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator, next);
+                sendPacket(new NetworkConnection(initiator, next),
+                        initiator.getMacAddress(),
+                        MACAddress.ipv4Broadcast(),
+                        new Packet(initiator.getIpAddress(), initiator.getDefaultGateway(), new ArpRequestMessage(initiator.getDefaultGateway(), initiator.getIpAddress(), initiator.getMacAddress())));
             }
         }
     }
@@ -163,13 +206,18 @@ public class SimulationController {
 
     public void startPacketProcessing() {
         threadPool.submit(() -> {
-            while (simulationRunning.get()) {
-                Pair<NetworkConnection, Frame> frameThroughNetworkConnection = receiveFrame();
-                /*threadPool.submit(() -> sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue()));*/
-                /*sendFrame(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());*/
-                sendFrameWithAnimation(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
-                /*forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());*/
+            while (simulationStarted.get()) {
+                try {
+                    pauseSemaphore.acquire(); // Block here if simulation is paused
+                    pauseSemaphore.release();
 
+                    Pair<NetworkConnection, Frame> frameThroughNetworkConnection = receiveFrame();
+                    sendFrameWithAnimation(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Preserve interrupt status
+                    logger.error("Thread was interrupted.", e);
+                }
             }
         });
     }
@@ -187,12 +235,11 @@ public class SimulationController {
     }
 
     public void handleFrameOnPc(PCModel pc, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("%s received frame from %s\n", networkConnection.getEndDevice(), networkConnection.getStartDevice());
         if (frame.getDestinationMac() == pc.getMacAddress() || frame.getPacket().getDestinationIp() == pc.getIpAddress()) {
             if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
-                System.out.printf("Hi i am %s and i received this message: %s\n", pc.getMacAddress(), stringMessage.getBody());
+                logger.debug("Recipient {}, ip {} received STRING MESSAGE, body -> {}", pc, pc.getIpAddress(), stringMessage.getBody());
             } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage dhcpOfferMessage) {
-                System.out.println("I received dhcp offer!");
+                logger.debug("Recipient {}, ip {} received DHCP OFFER MESSAGE, body -> DG {}, Offered ip {}, Subnetmask {}", pc, pc.getIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getSubnetMask());
                 pc.configure(dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getSubnetMask());
                 pc.updateArp(dhcpOfferMessage.getDefaultGateway(), frame.getSourceMac());
                 sendDhcpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
@@ -202,12 +249,14 @@ public class SimulationController {
                         pc.getDefaultGateway(),
                         new DhcpResponseMessage());
             } else if (frame.getPacket().getMessage() instanceof DhcpAckMessage) {
-                System.out.printf("i %s received dhcp ack!\n", pc);
-                System.out.printf("configuration state: %s\n", pc.isConfigured());
-                System.out.printf("configuration in progress: %s\n", pc.isConfigurationInProgress());
-            } else if (frame.getPacket().getMessage() instanceof ArpRequestMessage) {
-                System.out.printf("i %s received arp request message\n", pc);
-                sendArpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
+                logger.debug("Recipient {}, ip {}, received DHCP ACK MESSAGE, conf state: {}, conf in progress {}", pc, pc.getIpAddress(), pc.isConfigured(), pc.isConfigurationInProgress());
+            } else if (frame.getPacket().getMessage() instanceof ArpRequestMessage arpRequestMessage && arpRequestMessage.getRequestedIpAddress() == pc.getIpAddress()) {
+                logger.debug("Recipient {}, ip {} received ARP REQUEST MESSAGE", pc, pc.getIpAddress());
+                sendPacket(new NetworkConnection(pc, pc.getConnection()),
+                        pc.getMacAddress(),
+                        arpRequestMessage.getRequesterMacAddress(),
+                        new Packet(pc.getIpAddress(), arpRequestMessage.getRequesterIpAddress(), new ArpResponseMessage(pc.getMacAddress())));
+                sendArpResponse(new NetworkConnection(pc, pc.getConnection()),
                         pc.getMacAddress(),
                         frame.getSourceMac(),
                         pc.getIpAddress(),
@@ -215,33 +264,42 @@ public class SimulationController {
                         new ArpResponseMessage(pc.getMacAddress())
                 );
             } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
-                System.out.printf("i %s received arp response message\n", pc);
+                logger.debug("Recipient {}, ip {} received ARP RESPONSE MESSAGE from {}, body -> requested mac for device {}",
+                        pc, pc.getIpAddress(), storage.getNetworkDeviceByMac(frame.getSourceMac()), storage.getNetworkDeviceByMac(arpResponseMessage.getRequestedMacAddress()));
                 pc.updateArp(frame.getPacket().getSourceIp(), arpResponseMessage.getRequestedMacAddress());
             }
         }
     }
 
     public void handleFrameOnSwitch(SwitchModel switchModel, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("%s received frame from %s\n", networkConnection.getEndDevice(), networkConnection.getStartDevice());
         NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
         if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
+            logger.debug("{} DOESN'T KNOW the dst mac or it is broadcast", switchModel);
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if ((switchConnection.getNetworkDeviceModel() == connectedDevice)) {
                     //Do not forward frame to the source device
-                    switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
+                    if (!switchModel.knowsMacAddress(frame.getSourceMac())) {
+                        switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
+                        logger.debug("{} learned mac address of source device {}, mapped to port {}", switchModel, storage.getNetworkDeviceByMac(frame.getSourceMac()), switchConnection.getPort());
+                    }
                     continue;
                 }
                 outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
             }
         } else {
+            logger.debug("{} KNOWS the dst mac of device {}", switchModel, storage.getNetworkDeviceByMac(frame.getDestinationMac()));
             int outgoingPort = switchModel.getPort(frame.getDestinationMac());
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if (switchConnection.getNetworkDeviceModel() == connectedDevice) {
-                    switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
+                    if (!switchModel.knowsMacAddress(frame.getSourceMac())) {
+                        switchModel.learnMacAddress(frame.getSourceMac(), switchConnection.getPort());
+                        logger.debug("{} learned mac address of source device {}, mapped to port {}", switchModel, storage.getNetworkDeviceByMac(frame.getSourceMac()), switchConnection.getPort());
+                    }
                 }
             }
             for (SwitchConnection switchConnection : switchModel.getSwitchConnections()) {
                 if (switchConnection.getPort() == outgoingPort) {
+                    logger.debug("{} forwarding the frame to port {}, network connection: {} -> {}", switchModel, outgoingPort, switchModel, switchConnection.getNetworkDeviceModel());
                     outboundQueue.add(new Pair<>(new NetworkConnection(switchModel, switchConnection.getNetworkDeviceModel()), frame));
                 }
             }
@@ -249,12 +307,12 @@ public class SimulationController {
     }
 
     public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
-        System.out.printf("Received packet on ROUTER! ===>> Initiator: %s, Recipient: %s\n", networkConnection.getStartDevice(), networkConnection.getEndDevice());
-
         if (frame.getPacket().getMessage() instanceof RipMessage ripMessage) {
-            System.out.printf("i %s received rip message from %s\n", routerInterface, networkConnection.getStartDevice());
-            routerInterface.getInterfacesRouter().receiveRoutingTable(ripMessage.getRoutingTable(), frame.getPacket().getSourceIp());
+            logger.debug("Recipient {}, ip {} received RIP MESSAGE", routerInterface, routerInterface.getIpAddress());
+            routerInterface.getInterfacesRouter().updateRoutingTable(ripMessage.getRoutingTable(), frame.getPacket().getSourceIp());
         } else if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage dhcpDiscoverMessage) {
+            logger.debug("Recipient {}, ip {} received DHCP DISCOVERY MESSAGE from source device {}",
+                    routerInterface, routerInterface.getIpAddress(), storage.getNetworkDeviceByMac(dhcpDiscoverMessage.getSourceMac()));
             IPAddress offeredIpAddress = networksController.reserveIpAddressInNetwork(routerInterface.getNetwork());
             IPAddress defaultGateway = routerInterface.getIpAddress();
             SubnetMask subnetMask = routerInterface.getNetwork().getSubnetMask();
@@ -264,6 +322,7 @@ public class SimulationController {
                     routerInterface.getIpAddress(),
                     new DhcpOfferMessage(offeredIpAddress, defaultGateway, subnetMask));
         } else if (frame.getPacket().getMessage() instanceof DhcpResponseMessage) {
+            logger.debug("Recipient {}, ip {} received DHCP RESPONSE MESSAGE from source device {}", routerInterface, routerInterface.getIpAddress(), storage.getNetworkDeviceByMac(frame.getSourceMac()));
             sendDhcpAck(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
                     routerInterface.getMacAddress(),
                     frame.getSourceMac(),
@@ -271,6 +330,76 @@ public class SimulationController {
                     frame.getPacket().getSourceIp(),
                     new DhcpAckMessage()
             );
+        } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
+            RouterModel router = routerInterface.getInterfacesRouter();
+            IPAddress sourceIp = frame.getPacket().getSourceIp();
+            CountDownLatch countDownLatch = router.getIpAssociatedLatch(sourceIp);
+            if (countDownLatch == null || countDownLatch.getCount() == 0) {
+                logger.warn("count down latch {}", countDownLatch);
+                if (countDownLatch != null) {
+                    logger.warn("count is {}", countDownLatch.getCount());
+                }
+                return;
+            }
+            router.updateArp(sourceIp, arpResponseMessage.getRequestedMacAddress());
+            router.removeIpAssociatedLatch(sourceIp);
+
+        } else if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
+            logger.debug("Recipient {}, ip {}, received STRING MESSAGE", routerInterface, routerInterface.getIpAddress());
+            IPAddress forwardToIp = frame.getPacket().getDestinationIp();
+            RouterModel router = routerInterface.getInterfacesRouter();
+
+            ConcurrentHashMap<Network, RouterInterface> networkRouterInterfaceMap = router.getRouterInterfaces();
+
+            logger.info("{}, ip {} is looking for appropriate subnet", routerInterface, routerInterface.getIpAddress());
+            for (ConcurrentHashMap.Entry<Network, RouterInterface> entry : networkRouterInterfaceMap.entrySet()) {
+                Network network = entry.getKey();
+                RouterInterface ri = entry.getValue();
+
+                if ((network.getNetworkIpAddress().toLong() & network.getSubnetMask().toLong()) == (forwardToIp.toLong() & routerInterface.getNetwork().getSubnetMask().toLong())) {
+                    logger.debug("Found the correct router interface {}, ip {}, on network ip {}, DST IP {}", ri, ri.getIpAddress(), network.getNetworkIpAddress(), forwardToIp);
+                    MACAddress dstMacAddress = router.queryArp(forwardToIp);
+                    if (dstMacAddress == null) {
+                        logger.info("Router interface {}, ip {} DOES'T KNOW mac of dst device, sending ARP REQUEST to {}", ri, ri.getIpAddress(), forwardToIp);
+                        threadPool.submit(() -> {
+                            CountDownLatch latch = new CountDownLatch(1);
+                            router.setArpLatch(forwardToIp, latch);
+
+                            logger.error("{}", router.getIpAssociatedLatch(forwardToIp));
+
+                            sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
+                                    ri.getMacAddress(),
+                                    MACAddress.ipv4Broadcast(),
+                                    new Packet(ri.getIpAddress(), forwardToIp, new ArpRequestMessage(forwardToIp, ri.getIpAddress(), ri.getMacAddress())));
+
+                            try {
+                                boolean awaitSuccess = latch.await(5, TimeUnit.SECONDS);
+                                if (!awaitSuccess) {
+                                    logger.warn("Timeout waiting for ARP response");
+                                } else {
+                                    logger.info("ARP response received, continue forwarding original message");
+                                    sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
+                                            ri.getMacAddress(),
+                                            router.queryArp(forwardToIp),
+                                            new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
+                                }
+                            } catch (InterruptedException interruptedException) {
+                                Thread.currentThread().interrupt();
+                                logger.error("Interrupted inside ARP response waiting thread");
+                            } finally {
+                                router.removeIpAssociatedLatch(forwardToIp);
+                                logger.debug("Removed associated latch entry");
+                            }
+
+                        });
+                        //knows MAC
+                    } else {
+                        logger.info("{}, ip {} KNOWS the mac of dst device, forwarding message", ri, ri.getIpAddress());
+                        sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()), ri.getMacAddress(), dstMacAddress, new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
+                    }
+                }
+            }
+
         }
     }
 
@@ -279,7 +408,7 @@ public class SimulationController {
     }
 
     public void sendArpRequest(NetworkConnection networkConnection, MACAddress senderMac, IPAddress senderIp, IPAddress targetIp) {
-        sendPacket(networkConnection, senderMac, MACAddress.ipv4Broadcast(), new Packet(senderIp, targetIp, new ArpRequestMessage()));
+        sendPacket(networkConnection, senderMac, MACAddress.ipv4Broadcast(), new Packet(senderIp, targetIp, new ArpRequestMessage(targetIp, senderIp, senderMac)));
     }
 
     public void sendDhcpOffer(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, DhcpOfferMessage dhcpOfferMessage) {
@@ -329,6 +458,9 @@ public class SimulationController {
 
     private PathTransition preparePathTransition(Rectangle visualFrame, NetworkDeviceModel startDevice, NetworkDeviceModel endDevice) {
         ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(startDevice, endDevice);
+        if (connectionLine == null) {
+            System.out.println("connection line does not exist between these two devices");
+        }
 
         Path path = new Path();
         // Set up the path based on the start and end points of the connection line.
@@ -354,18 +486,32 @@ public class SimulationController {
     public Rectangle createVisualFrame(Frame frame) {
         Rectangle rectangle = new Rectangle(10, 10);
 
-        if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage) {
+        Message message = frame.getPacket().getMessage();
+
+        if (message instanceof DhcpDiscoverMessage) {
             rectangle.setFill(Color.DARKRED);
-        } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage) {
+        } else if (message instanceof DhcpOfferMessage) {
             rectangle.setFill(Color.RED);
-        } else if (frame.getPacket().getMessage() instanceof DhcpResponseMessage) {
+        } else if (message instanceof DhcpResponseMessage) {
             rectangle.setFill(Color.ORANGE);
-        } else if (frame.getPacket().getMessage() instanceof DhcpAckMessage) {
+        } else if (message instanceof DhcpAckMessage) {
             rectangle.setFill(Color.YELLOW);
-        } else if (frame.getPacket().getMessage() instanceof StringMessage) {
+        } else if (message instanceof ArpRequestMessage) {
             rectangle.setFill(Color.BLUE);
+        } else if (message instanceof ArpResponseMessage) {
+            rectangle.setFill(Color.LIGHTBLUE);
+        } else if (message instanceof StringMessage) {
+            rectangle.setFill(Color.GREEN);
         }
         return rectangle;
+    }
+
+    public boolean simulationStarted() {
+        return simulationStarted.get();
+    }
+
+    public boolean isPaused() {
+        return isPaused.get();
     }
 }
 

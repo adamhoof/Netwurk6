@@ -64,8 +64,9 @@ public class SimulationWorkspaceView {
         Button pcToolBarButton = createNetworkDeviceButton(pcView, new Image("server_icon.png"));
         Button connectorToolBarButton = createConnectorButton(new ImageView(new Image("connector_icon.png")));
         Button startSimulationToolBarButton = createStartSimulationButton(new ImageView(new Image("start_icon.png")));
+        Button pauseSimulationToolBarButton = createPauseSimulationButton(new ImageView(new Image("pause_icon.png")));
 
-        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton, startSimulationToolBarButton);
+        toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton, startSimulationToolBarButton, pauseSimulationToolBarButton);
         toolBar.toFront();
 
         simulationWorkspace.getChildren().add(toolBar);
@@ -114,7 +115,30 @@ public class SimulationWorkspaceView {
         icon.setPreserveRatio(true);
         startSimulationButton.setGraphic(icon);
 
-        startSimulationButton.setOnAction(clickEvent -> masterController.startSimulation());
+        startSimulationButton.setOnAction(clickEvent -> {
+            if (!masterController.simulationStarted()) {
+                masterController.startSimulation();
+                return;
+            }
+            masterController.resumeSimulation();
+        });
+
+        return startSimulationButton;
+    }
+
+    private Button createPauseSimulationButton(ImageView icon) {
+        Button startSimulationButton = new Button("Pause");
+        icon.setFitHeight(iconSize);
+        icon.setFitWidth(iconSize);
+        icon.setPreserveRatio(true);
+        startSimulationButton.setGraphic(icon);
+
+        startSimulationButton.setOnAction(clickEvent -> {
+            if (masterController.simulationPaused()) {
+                return;
+            }
+            masterController.pauseSimulation();
+        });
 
         return startSimulationButton;
     }

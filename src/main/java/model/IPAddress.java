@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Arrays;
+
 public class IPAddress {
     int[] octets = new int[4];
 
@@ -67,6 +69,20 @@ public class IPAddress {
             }
         }
         return stringBuilder.toString().stripTrailing();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IPAddress ipAddress = (IPAddress) o;
+        return Arrays.equals(octets, ipAddress.octets);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(octets);
     }
 
     public static IPAddress nullIpAddress() {
