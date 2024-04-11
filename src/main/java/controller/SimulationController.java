@@ -70,16 +70,6 @@ public class SimulationController {
         randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
 
-    private void checkForPause() {
-        if (isPaused.get()) {
-            try {
-                pauseSemaphore.acquire();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
     public void pauseSimulation() {
         if (isPaused.get()) {
             return;
@@ -333,16 +323,7 @@ public class SimulationController {
         } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
             RouterModel router = routerInterface.getInterfacesRouter();
             IPAddress sourceIp = frame.getPacket().getSourceIp();
-            CountDownLatch countDownLatch = router.getIpAssociatedLatch(sourceIp);
-            if (countDownLatch == null || countDownLatch.getCount() == 0) {
-                logger.warn("count down latch {}", countDownLatch);
-                if (countDownLatch != null) {
-                    logger.warn("count is {}", countDownLatch.getCount());
-                }
-                return;
-            }
             router.updateArp(sourceIp, arpResponseMessage.getRequestedMacAddress());
-            router.removeIpAssociatedLatch(sourceIp);
 
         } else if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
             logger.debug("Recipient {}, ip {}, received STRING MESSAGE", routerInterface, routerInterface.getIpAddress());
@@ -362,35 +343,24 @@ public class SimulationController {
                     if (dstMacAddress == null) {
                         logger.info("Router interface {}, ip {} DOES'T KNOW mac of dst device, sending ARP REQUEST to {}", ri, ri.getIpAddress(), forwardToIp);
                         threadPool.submit(() -> {
-                            CountDownLatch latch = new CountDownLatch(1);
-                            router.setArpLatch(forwardToIp, latch);
-
-                            logger.error("{}", router.getIpAssociatedLatch(forwardToIp));
-
                             sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
                                     ri.getMacAddress(),
                                     MACAddress.ipv4Broadcast(),
                                     new Packet(ri.getIpAddress(), forwardToIp, new ArpRequestMessage(forwardToIp, ri.getIpAddress(), ri.getMacAddress())));
-
-                            try {
-                                boolean awaitSuccess = latch.await(5, TimeUnit.SECONDS);
-                                if (!awaitSuccess) {
-                                    logger.warn("Timeout waiting for ARP response");
-                                } else {
-                                    logger.info("ARP response received, continue forwarding original message");
-                                    sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
-                                            ri.getMacAddress(),
-                                            router.queryArp(forwardToIp),
-                                            new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
+                            while (router.queryArp(forwardToIp) == null) {
+                                logger.info("trying to wait for 1000");
+                                try {
+                                    Thread.sleep(20); // 1000 milliseconds = 1 second
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt(); // Preserve interrupt status
                                 }
-                            } catch (InterruptedException interruptedException) {
-                                Thread.currentThread().interrupt();
-                                logger.error("Interrupted inside ARP response waiting thread");
-                            } finally {
-                                router.removeIpAssociatedLatch(forwardToIp);
-                                logger.debug("Removed associated latch entry");
-                            }
 
+                            }
+                            logger.info("finally sending packet");
+                            sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
+                                    ri.getMacAddress(),
+                                    router.queryArp(forwardToIp),
+                                    new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
                         });
                         //knows MAC
                     } else {
@@ -443,7 +413,10 @@ public class SimulationController {
                 Rectangle visualFrame = createVisualFrame(frame);
                 simulationWorkspaceView.addNode(visualFrame);
                 PathTransition pathTransition = preparePathTransition(visualFrame, animationStartNetworkDevice, animationEndNetworkDevice);
-
+                if (pathTransition == null) {
+                    logger.warn("path transition is empty boi");
+                    return;
+                }
                 pathTransition.setOnFinished(event -> {
                     simulationWorkspaceView.removeNode(visualFrame);
                     forwardToNextDevice(networkConnection, frame);
@@ -451,7 +424,7 @@ public class SimulationController {
 
                 pathTransition.play();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e);
             }
         });
     }
@@ -459,7 +432,8 @@ public class SimulationController {
     private PathTransition preparePathTransition(Rectangle visualFrame, NetworkDeviceModel startDevice, NetworkDeviceModel endDevice) {
         ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(startDevice, endDevice);
         if (connectionLine == null) {
-            System.out.println("connection line does not exist between these two devices");
+            logger.warn("connection line is empty boi");
+            return null;
         }
 
         Path path = new Path();
