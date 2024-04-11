@@ -16,6 +16,7 @@ import view.ConnectionLine;
 import view.SimulationWorkspaceView;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -297,10 +298,11 @@ public class SimulationController {
     }
 
     public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
-        if (frame.getPacket().getMessage() instanceof RipMessage ripMessage) {
+        Message message = frame.getPacket().getMessage();
+        if (message instanceof RipMessage ripMessage) {
             logger.debug("Recipient {}, ip {} received RIP MESSAGE", routerInterface, routerInterface.getIpAddress());
             routerInterface.getInterfacesRouter().updateRoutingTable(ripMessage.getRoutingTable(), frame.getPacket().getSourceIp());
-        } else if (frame.getPacket().getMessage() instanceof DhcpDiscoverMessage dhcpDiscoverMessage) {
+        } else if (message instanceof DhcpDiscoverMessage dhcpDiscoverMessage) {
             logger.debug("Recipient {}, ip {} received DHCP DISCOVERY MESSAGE from source device {}",
                     routerInterface, routerInterface.getIpAddress(), storage.getNetworkDeviceByMac(dhcpDiscoverMessage.getSourceMac()));
             IPAddress offeredIpAddress = networksController.reserveIpAddressInNetwork(routerInterface.getNetwork());
@@ -311,8 +313,9 @@ public class SimulationController {
                     dhcpDiscoverMessage.getSourceMac(),
                     routerInterface.getIpAddress(),
                     new DhcpOfferMessage(offeredIpAddress, defaultGateway, subnetMask));
-        } else if (frame.getPacket().getMessage() instanceof DhcpResponseMessage) {
+        } else if (message instanceof DhcpResponseMessage) {
             logger.debug("Recipient {}, ip {} received DHCP RESPONSE MESSAGE from source device {}", routerInterface, routerInterface.getIpAddress(), storage.getNetworkDeviceByMac(frame.getSourceMac()));
+            routerInterface.getInterfacesRouter().updateArp(frame.getPacket().getSourceIp(), frame.getSourceMac());
             sendDhcpAck(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
                     routerInterface.getMacAddress(),
                     frame.getSourceMac(),
@@ -320,12 +323,45 @@ public class SimulationController {
                     frame.getPacket().getSourceIp(),
                     new DhcpAckMessage()
             );
-        } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
-            RouterModel router = routerInterface.getInterfacesRouter();
-            IPAddress sourceIp = frame.getPacket().getSourceIp();
-            router.updateArp(sourceIp, arpResponseMessage.getRequestedMacAddress());
+        } else if (message instanceof ArpRequestMessage arpRequestMessage) {
+            // this means they are on a same network
+            if (arpRequestMessage.getRequestedIpAddress() != routerInterface.getIpAddress()) {
+                for (NetworkDeviceModel networkDevice : routerInterface.getDirectConnections()) {
+                    if (networkDevice instanceof PCModel pc && pc.getIpAddress() == arpRequestMessage.getRequestedIpAddress()) {
+                        MACAddress recipientMac = routerInterface.getInterfacesRouter().queryArp(pc.getIpAddress());
+                        if (recipientMac == null) {
+                            logger.warn("router interface {}, ip {} DOES'T know mac of device {}, ip {}", routerInterface, routerInterface.getIpAddress(), pc, pc.getIpAddress());
+                        } else {
+                            sendPacket(new NetworkConnection(routerInterface, pc),
+                                    routerInterface.getMacAddress(),
+                                    recipientMac,
+                                    frame.getPacket());
+                        }
 
-        } else if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
+                    }
+                }
+            }
+        } else if (message instanceof ArpResponseMessage arpResponseMessage) {
+            logger.info("router interface {}, ip {} received arp response message", routerInterface, routerInterface.getIpAddress());
+            if (arpResponseMessage.getRequestedMacAddress() != routerInterface.getMacAddress()) {
+
+                MACAddress dstMac = frame.getDestinationMac();
+                for (NetworkDeviceModel networkDevice : routerInterface.getDirectConnections()) {
+                    if (networkDevice instanceof PCModel pc) {
+                        if (pc.getMacAddress() == dstMac) {
+                            sendPacket(new NetworkConnection(routerInterface, pc),
+                                    routerInterface.getMacAddress(),
+                                    dstMac, frame.getPacket()
+                            );
+                        }
+                    }
+                }
+            } else {
+                RouterModel router = routerInterface.getInterfacesRouter();
+                IPAddress sourceIp = frame.getPacket().getSourceIp();
+                router.updateArp(sourceIp, arpResponseMessage.getRequestedMacAddress());
+            }
+        } else if (message instanceof StringMessage stringMessage) {
             logger.debug("Recipient {}, ip {}, received STRING MESSAGE", routerInterface, routerInterface.getIpAddress());
             IPAddress forwardToIp = frame.getPacket().getDestinationIp();
             RouterModel router = routerInterface.getInterfacesRouter();
@@ -341,31 +377,15 @@ public class SimulationController {
                     logger.debug("Found the correct router interface {}, ip {}, on network ip {}, DST IP {}", ri, ri.getIpAddress(), network.getNetworkIpAddress(), forwardToIp);
                     MACAddress dstMacAddress = router.queryArp(forwardToIp);
                     if (dstMacAddress == null) {
-                        logger.info("Router interface {}, ip {} DOES'T KNOW mac of dst device, sending ARP REQUEST to {}", ri, ri.getIpAddress(), forwardToIp);
-                        threadPool.submit(() -> {
-                            sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
-                                    ri.getMacAddress(),
-                                    MACAddress.ipv4Broadcast(),
-                                    new Packet(ri.getIpAddress(), forwardToIp, new ArpRequestMessage(forwardToIp, ri.getIpAddress(), ri.getMacAddress())));
-                            while (router.queryArp(forwardToIp) == null) {
-                                logger.info("trying to wait for 1000");
-                                try {
-                                    Thread.sleep(20); // 1000 milliseconds = 1 second
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt(); // Preserve interrupt status
-                                }
-
-                            }
-                            logger.info("finally sending packet");
-                            sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
-                                    ri.getMacAddress(),
-                                    router.queryArp(forwardToIp),
-                                    new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
-                        });
+                        logger.warn("Router interface {}, ip {} DOES'T KNOW mac of dst device", ri, ri.getIpAddress());
+                        return;
                         //knows MAC
                     } else {
                         logger.info("{}, ip {} KNOWS the mac of dst device, forwarding message", ri, ri.getIpAddress());
-                        sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()), ri.getMacAddress(), dstMacAddress, new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
+                        sendPacket(new NetworkConnection(ri, ri.getFirstConnectedDevice()),
+                                ri.getMacAddress(),
+                                dstMacAddress,
+                                new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
                     }
                 }
             }

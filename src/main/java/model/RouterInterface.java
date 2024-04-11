@@ -43,4 +43,8 @@ public class RouterInterface extends NetworkDeviceModel {
     public Network getNetwork() {
         return network;
     }
+
+    public synchronized HashSet<NetworkDeviceModel> getDirectConnections() {
+        return directConnections;
+    }
 }
