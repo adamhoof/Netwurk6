@@ -20,28 +20,30 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Controls the simulation of network communications, handling animations, and packet transmissions.
+ */
 public class SimulationController {
     private final ScheduledExecutorService threadPool;
-
     private final BlockingQueue<Pair<NetworkConnection, Frame>> outboundQueue;
-
     private final NetworkDeviceStorage storage;
-
     private final NetworksController networksController;
-
     private final SimulationWorkspaceView simulationWorkspaceView;
-
     private final AtomicBoolean simulationStarted = new AtomicBoolean(false);
-
     private final AtomicBoolean isPaused = new AtomicBoolean(true);
-
     private final Semaphore pauseSemaphore = new Semaphore(1);
 
     private ScheduledFuture<?> randomCommunicationTaskHandle;
     private ScheduledFuture<?> ripTaskHandle;
-
     private static final Logger logger = LogManager.getLogger(SimulationController.class);
 
+    /**
+     * Initializes the simulation controller with required dependencies.
+     *
+     * @param simulationWorkspaceView The user interface for the simulation.
+     * @param storage                 Storage for all network devices.
+     * @param networksController      Controller that manages network settings and behaviors.
+     */
     public SimulationController(SimulationWorkspaceView simulationWorkspaceView, NetworkDeviceStorage storage, NetworksController networksController) {
         this.outboundQueue = new LinkedBlockingQueue<>();
         this.threadPool = Executors.newScheduledThreadPool(50);
@@ -50,6 +52,12 @@ public class SimulationController {
         this.simulationWorkspaceView = simulationWorkspaceView;
     }
 
+    /**
+     * Retrieves a frame from the outbound queue, blocking until one is available.
+     *
+     * @return The network connection and frame to be processed.
+     * @throws RuntimeException if the thread is interrupted.
+     */
     public Pair<NetworkConnection, Frame> receiveFrame() {
         try {
             return outboundQueue.take();
@@ -58,6 +66,9 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Starts the network simulation, scheduling tasks for random communications and RIP protocol operations.
+     */
     public void startSimulation() {
         if (simulationStarted.get()) {
             return;
@@ -65,11 +76,14 @@ public class SimulationController {
         isPaused.set(false);
         simulationStarted.set(true);
 
-        ripTaskHandle =threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
+        ripTaskHandle = threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
         startPacketProcessing();
         randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
 
+    /**
+     * Pauses the network simulation, halting all ongoing tasks and animations.
+     */
     public void pauseSimulation() {
         if (isPaused.get()) {
             return;
@@ -85,6 +99,9 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Resumes the network simulation, restarting the paused tasks.
+     */
     public void resumeSimulation() {
         isPaused.set(false);
         pauseSemaphore.release();
@@ -92,6 +109,9 @@ public class SimulationController {
         randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 5, 10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Periodically initiates RIP protocol communications between routers to update routing tables.
+     */
     private void startRip() {
         for (RouterModel router : storage.getRouterModels()) {
             for (RouterModel connectedRouter : networksController.getRoutersRipConnections(router)) {
@@ -101,12 +121,14 @@ public class SimulationController {
                             new NetworkConnection(router.getNetworksRouterInterface(sharedNetwork), connectedRouter.getNetworksRouterInterface(sharedNetwork)),
                             new Frame(router.getMacAddress(), connectedRouter.getMacAddress(),
                                     new Packet(router.getNetworksRouterInterface(sharedNetwork).getIpAddress(), connectedRouter.getNetworksRouterInterface(sharedNetwork).getIpAddress(), new RipMessage(router.getRoutingTable()))));
-                    /*connectedRouter.receiveRoutingTable(router.getRoutingTable(), router.getIpAddressInNetwork(sharedNetwork));*/
                 }
             }
         }
     }
 
+    /**
+     * Randomly selects two PCs and attempts to start a communication session between them.
+     */
     public void pickRandomLanCommunication() {
         logger.debug("Picking PC communication");
         ArrayList<PCModel> pcModels = storage.getPcModels();
@@ -128,15 +150,18 @@ public class SimulationController {
             randomIndex = random.nextInt(pcModels.size());
             recipientPcModel = pcModels.get(randomIndex);
         }
-        //TODO take a look whether the pc is in some router subnet => configure first, or if he has none (like only switch as the lan interface with no router anywhere) => allow no configuration to happen
         logger.debug("Initiator {} wants to communicate with recipient {}", initiatorPcModel, recipientPcModel);
         PCModel finalInitiatorPcModel = initiatorPcModel;
         PCModel finalRecipientPcModel = recipientPcModel;
-        threadPool.submit(() -> {
-            initiateCommunication(finalInitiatorPcModel, finalRecipientPcModel);
-        });
+        initiateCommunication(finalInitiatorPcModel, finalRecipientPcModel);
     }
 
+    /**
+     * Initiates a communication session between two PCs, handling configuration and message transmission.
+     *
+     * @param initiator The initiating PC.
+     * @param recipient The recipient PC.
+     */
     public void initiateCommunication(PCModel initiator, PCModel recipient) {
         if (initiator == null || recipient == null) {
             logger.fatal("initiator is {}, recipient {} is", initiator, recipient);
@@ -188,12 +213,22 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Sends a network packet through the simulation infrastructure.
+     *
+     * @param networkConnection The network connection through which the packet will be sent.
+     * @param sourceMac         The source MAC address.
+     * @param destinationMac    The destination MAC address.
+     * @param packet            The packet to be sent.
+     */
     public void sendPacket(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress destinationMac, Packet packet) {
         Frame ethernetFrame = new Frame(sourceMac, destinationMac, packet);
         outboundQueue.add(new Pair<>(networkConnection, ethernetFrame));
     }
 
-
+    /**
+     * Handles the packet processing logic, distributing frames to their respective destination devices.
+     */
     public void startPacketProcessing() {
         threadPool.submit(() -> {
             while (simulationStarted.get()) {
@@ -212,6 +247,12 @@ public class SimulationController {
         });
     }
 
+    /**
+     * Forwards a frame to the next device in the network path.
+     *
+     * @param networkConnection The network connection representing the path of the frame.
+     * @param frame             The frame being forwarded.
+     */
     public void forwardToNextDevice(NetworkConnection networkConnection, Frame frame) {
         if (networkConnection.getEndDevice() instanceof PCModel pc) {
             handleFrameOnPc(pc, networkConnection, frame);
@@ -224,6 +265,13 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Processes frames received by a PC, handling different types of network messages.
+     *
+     * @param pc                The PC receiving the frame.
+     * @param networkConnection The network connection over which the frame was received.
+     * @param frame             The frame to be processed.
+     */
     public void handleFrameOnPc(PCModel pc, NetworkConnection networkConnection, Frame frame) {
         if (frame.getDestinationMac() == pc.getMacAddress() || frame.getPacket().getDestinationIp() == pc.getIpAddress()) {
             if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
@@ -261,6 +309,13 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Handles frames received by a switch, forwarding them to the appropriate connected devices.
+     *
+     * @param switchModel       The switch processing the frame.
+     * @param networkConnection The network connection over which the frame was received.
+     * @param frame             The frame to be processed.
+     */
     public void handleFrameOnSwitch(SwitchModel switchModel, NetworkConnection networkConnection, Frame frame) {
         NetworkDeviceModel connectedDevice = networkConnection.getStartDevice();
         if (!switchModel.knowsMacAddress(frame.getDestinationMac())) {
@@ -296,6 +351,13 @@ public class SimulationController {
         }
     }
 
+    /**
+     * Processes frames received by a router, handling different types of network messages.
+     *
+     * @param routerInterface   The router interface processing the frame.
+     * @param networkConnection The network connection over which the frame was received.
+     * @param frame             The frame to be processed.
+     */
     public void handleFrameOnRouter(RouterInterface routerInterface, NetworkConnection networkConnection, Frame frame) {
         Message message = frame.getPacket().getMessage();
         if (message instanceof RipMessage ripMessage) {
@@ -387,35 +449,95 @@ public class SimulationController {
                                 new Packet(ri.getIpAddress(), forwardToIp, stringMessage));
                     }
                 }
-            }
 
+            }
         }
     }
 
+    /**
+     * Sends a DHCP discovery packet over the specified network connection.
+     *
+     * @param networkConnection The network connection to send the packet on.
+     * @param sourceMac         The MAC address of the source device.
+     */
     public void sendDhcpDiscovery(NetworkConnection networkConnection, MACAddress sourceMac) {
         sendPacket(networkConnection, sourceMac, MACAddress.ipv4Broadcast(), new Packet(null, null, new DhcpDiscoverMessage(sourceMac)));
     }
 
+    /**
+     * Sends an ARP request over a network connection.
+     *
+     * @param networkConnection The network connection over which the ARP request is sent.
+     * @param senderMac         The MAC address of the sender.
+     * @param senderIp          The IP address of the sender.
+     * @param targetIp          The target IP address for the ARP request.
+     */
     public void sendArpRequest(NetworkConnection networkConnection, MACAddress senderMac, IPAddress senderIp, IPAddress targetIp) {
         sendPacket(networkConnection, senderMac, MACAddress.ipv4Broadcast(), new Packet(senderIp, targetIp, new ArpRequestMessage(targetIp, senderIp, senderMac)));
     }
 
+    /**
+     * Sends a DHCP offer response to a DHCP discovery.
+     *
+     * @param networkConnection The network connection to send the DHCP offer on.
+     * @param sourceMac         The source MAC address.
+     * @param dstMac            The destination MAC address.
+     * @param sourceIpAddress   The IP address of the DHCP server.
+     * @param dhcpOfferMessage  The DHCP offer message containing the offered IP address and subnet mask.
+     */
     public void sendDhcpOffer(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, DhcpOfferMessage dhcpOfferMessage) {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, IPAddress.nullIpAddress(), dhcpOfferMessage));
     }
 
+    /**
+     * Sends a DHCP response message, typically acknowledging configuration settings.
+     *
+     * @param networkConnection   The network connection to send the DHCP response on.
+     * @param sourceMac           The source MAC address.
+     * @param dstMac              The destination MAC address.
+     * @param sourceIpAddress     The IP address of the DHCP server.
+     * @param dstIpAddress        The IP address of the DHCP client.
+     * @param dhcpResponseMessage The DHCP response message to be sent.
+     */
     public void sendDhcpResponse(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, DhcpResponseMessage dhcpResponseMessage) {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpResponseMessage));
     }
 
+    /**
+     * Sends a DHCP acknowledgment message.
+     *
+     * @param networkConnection The network connection to send the DHCP ACK on.
+     * @param sourceMac         The source MAC address.
+     * @param dstMac            The destination MAC address.
+     * @param sourceIpAddress   The IP address of the DHCP server.
+     * @param dstIpAddress      The IP address of the DHCP client.
+     * @param dhcpAckMessage    The DHCP acknowledgment message.
+     */
     public void sendDhcpAck(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, DhcpAckMessage dhcpAckMessage) {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpAckMessage));
     }
 
+    /**
+     * Sends an ARP response over a network connection.
+     *
+     * @param networkConnection  The network connection over which the ARP response is sent.
+     * @param sourceMac          The MAC address of the sender.
+     * @param dstMac             The destination MAC address.
+     * @param sourceIpAddress    The IP address of the sender.
+     * @param dstIpAddress       The IP address of the requester.
+     * @param arpResponseMessage The ARP response message containing the MAC address for the requested IP.
+     */
     public void sendArpResponse(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, ArpResponseMessage arpResponseMessage) {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, arpResponseMessage));
     }
 
+    /**
+     * Sends a frame over the network with visual animations representing the packet transfer.
+     * This method is intended to be called on the JavaFX application thread.
+     *
+     * @param networkConnection The network connection through which the frame is sent.
+     * @param frame             The frame containing the packet to be sent.
+     */
     private void sendFrameWithAnimation(NetworkConnection networkConnection, Frame frame) {
         Platform.runLater(() -> {
             try {
@@ -433,7 +555,7 @@ public class SimulationController {
                 simulationWorkspaceView.addNode(visualFrame);
                 PathTransition pathTransition = preparePathTransition(visualFrame, animationStartNetworkDevice, animationEndNetworkDevice);
                 if (pathTransition == null) {
-                    logger.warn("path transition is empty boi");
+                    logger.warn("Path transition could not be initialized.");
                     return;
                 }
                 pathTransition.setOnFinished(event -> {
@@ -443,15 +565,23 @@ public class SimulationController {
 
                 pathTransition.play();
             } catch (Exception e) {
-                logger.error(e);
+                logger.error("an error occurred while trying to animate the frame transfer.", e);
             }
         });
     }
 
+    /**
+     * Prepares a path transition for the animation of a network packet.
+     *
+     * @param visualFrame The visual representation of the frame.
+     * @param startDevice The starting device of the animation.
+     * @param endDevice   The ending device of the animation.
+     * @return The path transition for the animation.
+     */
     private PathTransition preparePathTransition(Rectangle visualFrame, NetworkDeviceModel startDevice, NetworkDeviceModel endDevice) {
         ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(startDevice, endDevice);
         if (connectionLine == null) {
-            logger.warn("connection line is empty boi");
+            logger.warn("no connection line found for the specified devices.");
             return null;
         }
 
@@ -475,26 +605,41 @@ public class SimulationController {
         return pathTransition;
     }
 
-
+    /**
+     * Creates a visual representation of a frame based on the type of message it carries.
+     *
+     * @param frame The frame for which the visual representation is created.
+     * @return A rectangle colored according to the type of message in the frame.
+     */
     public Rectangle createVisualFrame(Frame frame) {
         Rectangle rectangle = new Rectangle(10, 10);
 
         Message message = frame.getPacket().getMessage();
-
-        if (message instanceof DhcpDiscoverMessage) {
-            rectangle.setFill(Color.DARKRED);
-        } else if (message instanceof DhcpOfferMessage) {
-            rectangle.setFill(Color.RED);
-        } else if (message instanceof DhcpResponseMessage) {
-            rectangle.setFill(Color.ORANGE);
-        } else if (message instanceof DhcpAckMessage) {
-            rectangle.setFill(Color.YELLOW);
-        } else if (message instanceof ArpRequestMessage) {
-            rectangle.setFill(Color.BLUE);
-        } else if (message instanceof ArpResponseMessage) {
-            rectangle.setFill(Color.LIGHTBLUE);
-        } else if (message instanceof StringMessage) {
-            rectangle.setFill(Color.GREEN);
+        switch (message.getClass().getSimpleName()) {
+            case "DhcpDiscoverMessage":
+                rectangle.setFill(Color.DARKRED);
+                break;
+            case "DhcpOfferMessage":
+                rectangle.setFill(Color.RED);
+                break;
+            case "DhcpResponseMessage":
+                rectangle.setFill(Color.ORANGE);
+                break;
+            case "DhcpAckMessage":
+                rectangle.setFill(Color.YELLOW);
+                break;
+            case "ArpRequestMessage":
+                rectangle.setFill(Color.BLUE);
+                break;
+            case "ArpResponseMessage":
+                rectangle.setFill(Color.LIGHTBLUE);
+                break;
+            case "StringMessage":
+                rectangle.setFill(Color.GREEN);
+                break;
+            default:
+                rectangle.setFill(Color.GRAY);
+                break;
         }
         return rectangle;
     }
@@ -507,5 +652,4 @@ public class SimulationController {
         return isPaused.get();
     }
 }
-
 
