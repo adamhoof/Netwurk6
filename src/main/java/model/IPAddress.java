@@ -2,9 +2,21 @@ package model;
 
 import java.util.Arrays;
 
+/**
+ * Represents an IP address in IPv4 format, storing each octet as an integer.
+ * Provides utility functions for IP address manipulation and conversion between formats.
+ */
 public class IPAddress {
-    int[] octets = new int[4];
+    private int[] octets = new int[4];
 
+    /**
+     * Constructs an IPAddress using four integers representing the octets.
+     *
+     * @param firstOctet the first octet of the IP address
+     * @param secondOctet the second octet of the IP address
+     * @param thirdOctet the third octet of the IP address
+     * @param fourthOctet the fourth octet of the IP address
+     */
     public IPAddress(int firstOctet, int secondOctet, int thirdOctet, int fourthOctet) {
         octets[0] = firstOctet;
         octets[1] = secondOctet;
@@ -12,39 +24,46 @@ public class IPAddress {
         octets[3] = fourthOctet;
     }
 
+    /**
+     * Constructs an IPAddress by copying another IPAddress.
+     *
+     * @param ipAddress the IPAddress to copy
+     */
     public IPAddress(IPAddress ipAddress) {
-        octets[0] = ipAddress.octets[0];
-        octets[1] = ipAddress.octets[1];
-        octets[2] = ipAddress.octets[2];
-        octets[3] = ipAddress.octets[3];
+        this(ipAddress.octets[0], ipAddress.octets[1], ipAddress.octets[2], ipAddress.octets[3]);
     }
 
+    /**
+     * Increments a specified octet by a given amount.
+     *
+     * @param octet the octet to increment (1 to 4)
+     * @param increment the amount to add to the octet
+     */
     public void incrementOctet(int octet, int increment) {
-        switch (octet) {
-            case 1:
-                octets[0] += increment;
-                break;
-            case 2:
-                octets[1] += increment;
-                break;
-            case 3:
-                octets[2] += increment;
-                break;
-            case 4:
-                octets[3] += increment;
-                break;
+        if (octet >= 1 && octet <= 4) {
+            octets[octet - 1] += increment;
         }
     }
 
+    /**
+     * Converts this IP address to a long integer representation.
+     *
+     * @return the long integer representation of this IP address
+     */
     public long toLong() {
         long ipAsLong = 0;
-
         for (int i = 0; i < octets.length; i++) {
             ipAsLong = (ipAsLong << 8) + octets[i];
         }
         return ipAsLong;
     }
 
+    /**
+     * Converts a long integer to an IPAddress object.
+     *
+     * @param ipAsLong the long integer representation of the IP address
+     * @return an IPAddress object corresponding to the given long integer
+     */
     public static IPAddress longToIPAddress(long ipAsLong) {
         int octet1 = (int) ((ipAsLong >> 24) & 0xFF);
         int octet2 = (int) ((ipAsLong >> 16) & 0xFF);
@@ -59,23 +78,13 @@ public class IPAddress {
 
     @Override
     public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        int counter = 0;
-        for (int octet : octets) {
-            stringBuilder.append(octet);
-            counter++;
-            if (counter < octets.length) {
-                stringBuilder.append(".");
-            }
-        }
-        return stringBuilder.toString().stripTrailing();
+        return String.format("%d.%d.%d.%d", octets[0], octets[1], octets[2], octets[3]);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         IPAddress ipAddress = (IPAddress) o;
         return Arrays.equals(octets, ipAddress.octets);
     }
@@ -85,6 +94,11 @@ public class IPAddress {
         return Arrays.hashCode(octets);
     }
 
+    /**
+     * Provides a 'null' or zeroed-out IPAddress commonly used as a default.
+     *
+     * @return an IPAddress with all octets set to zero
+     */
     public static IPAddress nullIpAddress() {
         return new IPAddress(0, 0, 0, 0);
     }
