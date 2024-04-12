@@ -66,7 +66,7 @@ public class SimulationController {
         isPaused.set(false);
         simulationStarted.set(true);
 
-        /*ripTaskHandle =threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);*/
+        ripTaskHandle =threadPool.scheduleAtFixedRate(this::startRip, 0, 30, TimeUnit.SECONDS);
         startPacketProcessing();
         randomCommunicationTaskHandle = threadPool.scheduleAtFixedRate(this::pickRandomLanCommunication, 0, 5, TimeUnit.SECONDS);
     }
