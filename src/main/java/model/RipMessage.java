@@ -5,7 +5,7 @@ package model;
  * Used for exchanging routing information between routers in a network.
  */
 public class RipMessage implements Message {
-    private RoutingTable routingTable;
+    private final RoutingTable routingTable;
 
     /**
      * Constructs a RipMessage with a specific routing table.

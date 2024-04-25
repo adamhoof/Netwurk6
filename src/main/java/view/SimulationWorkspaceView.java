@@ -126,6 +126,9 @@ public class SimulationWorkspaceView {
         button.setGraphic(buttonIcon);
 
         button.setOnAction(buttonClickEvent -> {
+            if (!masterController.simulationPaused()) {
+                return;
+            }
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 removeNode(cursorFollowingDeviceHandler.get());
             }
@@ -148,7 +151,12 @@ public class SimulationWorkspaceView {
         icon.setPreserveRatio(true);
         connectorButton.setGraphic(icon);
 
-        connectorButton.setOnAction(clickEvent -> isConnectionMode = true);
+        connectorButton.setOnAction(clickEvent -> {
+            if (!masterController.simulationPaused()) {
+                return;
+            }
+            isConnectionMode = true;
+        });
 
         return connectorButton;
     }
@@ -309,6 +317,9 @@ public class SimulationWorkspaceView {
      */
     private void setupPlacedDeviceDragEvent(NetworkDeviceView networkDeviceView, double[] cursorDistanceFromShapeTopLeft) {
         networkDeviceView.setOnMouseDragged(dragEvent -> {
+            if (!masterController.simulationPaused()) {
+                return;
+            }
             labelsTooltip.hide();
             if (dragEvent.getButton() == MouseButton.PRIMARY) {
                 double newX = dragEvent.getSceneX() + cursorDistanceFromShapeTopLeft[0];
