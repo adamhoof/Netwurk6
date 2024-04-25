@@ -169,9 +169,11 @@ public class SimulationController {
         }
 
         logger.debug("Initiating communication, initiator: {}, recipient {}", initiator, recipient);
+        simulationWorkspaceView.printToLogWindow(String.format("%s wants to communicate with %s\n", initiator, recipient), Color.GRAY);
 
         NetworkDeviceModel next = initiator.getConnection();
         if (!initiator.isConfigured()) {
+            simulationWorkspaceView.printToLogWindow(String.format("%s is not configured => sending DHCP-Discovery\n", initiator), Color.DARKRED);
             logger.info("initiator {} is not configured => sending DHCP discovery", initiator);
             initiator.setConfigurationInProgress();
             sendDhcpDiscovery(new NetworkConnection(initiator, next), initiator.getMacAddress());
@@ -179,7 +181,11 @@ public class SimulationController {
         }
 
         if (!recipient.isConfigured()) {
-            logger.debug("Recipient {} is not configured", recipient);
+            next = recipient.getConnection();
+            simulationWorkspaceView.printToLogWindow(String.format("%s is not configured => sending DHCP-Discovery\n", recipient), Color.DARKRED);
+            logger.info("recipient {} is not configured => sending DHCP discovery", recipient);
+            recipient.setConfigurationInProgress();
+            sendDhcpDiscovery(new NetworkConnection(recipient, next), recipient.getMacAddress());
             return;
         }
 
@@ -189,9 +195,11 @@ public class SimulationController {
 
             if (recipientMac != null) {
                 logger.info("Initiator {}, ip {} KNOWS recipient mac, sending direct string message, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator, next);
+                simulationWorkspaceView.printToLogWindow(String.format("%s KNOWS recipient MAC => sending string message\n", initiator), Color.GREEN);
                 sendPacket(new NetworkConnection(initiator, next), initiator.getMacAddress(), recipientMac, new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("googa")));
             } else {
                 logger.info("Initiator DOESN'T KNOW recipient mac, sending ARP request, network communication: {} -> {}", initiator, next);
+                simulationWorkspaceView.printToLogWindow(String.format("%s DOESN'T know recipient MAC => sending ARP request\n", initiator), Color.BLUE);
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
@@ -199,12 +207,14 @@ public class SimulationController {
             MACAddress defaultGatewayMac = initiator.queryArp(initiator.getDefaultGateway());
             if (defaultGatewayMac != null) {
                 logger.info("Initiator {}, ip {} KNOWS default gateway mac (ip {}), sending string message, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator.getDefaultGateway(), initiator, next);
+                simulationWorkspaceView.printToLogWindow(String.format("%s KNOWS default gateway MAC => sending string message\n", initiator), Color.GREEN);
                 sendPacket(new NetworkConnection(initiator, next),
                         initiator.getMacAddress(),
                         defaultGatewayMac,
-                        new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("fuck")));
+                        new Packet(initiator.getIpAddress(), recipient.getIpAddress(), new StringMessage("googa")));
             } else {
                 logger.info("Initiator {}, ip {} DOESN'T KNOW default gateway mac, sending arp request, network communication: {} -> {}", initiator, initiator.getIpAddress(), initiator, next);
+                simulationWorkspaceView.printToLogWindow(String.format("%s DOESN'T know default gateway MAC => sending ARP request\n", initiator), Color.BLUE);
                 sendPacket(new NetworkConnection(initiator, next),
                         initiator.getMacAddress(),
                         MACAddress.ipv4Broadcast(),
@@ -276,10 +286,12 @@ public class SimulationController {
         if (frame.getDestinationMac() == pc.getMacAddress() || frame.getPacket().getDestinationIp() == pc.getIpAddress()) {
             if (frame.getPacket().getMessage() instanceof StringMessage stringMessage) {
                 logger.debug("Recipient {}, ip {} received STRING MESSAGE, body -> {}", pc, pc.getIpAddress(), stringMessage.getBody());
+                simulationWorkspaceView.printToLogWindow(String.format("%s received string message: %s\n", pc, stringMessage.getBody()), Color.GREEN);
             } else if (frame.getPacket().getMessage() instanceof DhcpOfferMessage dhcpOfferMessage) {
                 logger.debug("Recipient {}, ip {} received DHCP OFFER MESSAGE, body -> DG {}, Offered ip {}, Subnetmask {}", pc, pc.getIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getSubnetMask());
                 pc.configure(dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getSubnetMask());
                 pc.updateArp(dhcpOfferMessage.getDefaultGateway(), frame.getSourceMac());
+                simulationWorkspaceView.printToLogWindow(String.format("%s sending DHCP-Response\n", pc), Color.ORANGE);
                 sendDhcpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
                         pc.getMacAddress(),
                         pc.queryArp(pc.getDefaultGateway()),
@@ -290,17 +302,11 @@ public class SimulationController {
                 logger.debug("Recipient {}, ip {}, received DHCP ACK MESSAGE, conf state: {}, conf in progress {}", pc, pc.getIpAddress(), pc.isConfigured(), pc.isConfigurationInProgress());
             } else if (frame.getPacket().getMessage() instanceof ArpRequestMessage arpRequestMessage && arpRequestMessage.getRequestedIpAddress() == pc.getIpAddress()) {
                 logger.debug("Recipient {}, ip {} received ARP REQUEST MESSAGE", pc, pc.getIpAddress());
+                simulationWorkspaceView.printToLogWindow(String.format("%s sending ARP-Response\n", pc), Color.LIGHTBLUE);
                 sendPacket(new NetworkConnection(pc, pc.getConnection()),
                         pc.getMacAddress(),
                         arpRequestMessage.getRequesterMacAddress(),
                         new Packet(pc.getIpAddress(), arpRequestMessage.getRequesterIpAddress(), new ArpResponseMessage(pc.getMacAddress())));
-                sendArpResponse(new NetworkConnection(pc, pc.getConnection()),
-                        pc.getMacAddress(),
-                        frame.getSourceMac(),
-                        pc.getIpAddress(),
-                        frame.getPacket().getSourceIp(),
-                        new ArpResponseMessage(pc.getMacAddress())
-                );
             } else if (frame.getPacket().getMessage() instanceof ArpResponseMessage arpResponseMessage) {
                 logger.debug("Recipient {}, ip {} received ARP RESPONSE MESSAGE from {}, body -> requested mac for device {}",
                         pc, pc.getIpAddress(), storage.getNetworkDeviceByMac(frame.getSourceMac()), storage.getNetworkDeviceByMac(arpResponseMessage.getRequestedMacAddress()));
@@ -369,6 +375,7 @@ public class SimulationController {
             IPAddress offeredIpAddress = networksController.reserveIpAddressInNetwork(routerInterface.getNetwork());
             IPAddress defaultGateway = routerInterface.getIpAddress();
             SubnetMask subnetMask = routerInterface.getNetwork().getSubnetMask();
+            simulationWorkspaceView.printToLogWindow(String.format("%s sending DHCP-Offer\n", routerInterface.getInterfacesRouter()), Color.RED);
             sendDhcpOffer(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
                     routerInterface.getMacAddress(),
                     dhcpDiscoverMessage.getSourceMac(),
@@ -377,6 +384,7 @@ public class SimulationController {
         } else if (message instanceof DhcpResponseMessage) {
             logger.debug("Recipient {}, ip {} received DHCP RESPONSE MESSAGE from source device {}", routerInterface, routerInterface.getIpAddress(), storage.getNetworkDeviceByMac(frame.getSourceMac()));
             routerInterface.getInterfacesRouter().updateArp(frame.getPacket().getSourceIp(), frame.getSourceMac());
+            simulationWorkspaceView.printToLogWindow(String.format("%s sending DHCP-Ack message\n", routerInterface.getInterfacesRouter()), Color.YELLOWGREEN);
             sendDhcpAck(new NetworkConnection(routerInterface, networkConnection.getStartDevice()),
                     routerInterface.getMacAddress(),
                     frame.getSourceMac(),
@@ -626,7 +634,7 @@ public class SimulationController {
                 rectangle.setFill(Color.ORANGE);
                 break;
             case "DhcpAckMessage":
-                rectangle.setFill(Color.YELLOW);
+                rectangle.setFill(Color.GREENYELLOW);
                 break;
             case "ArpRequestMessage":
                 rectangle.setFill(Color.BLUE);

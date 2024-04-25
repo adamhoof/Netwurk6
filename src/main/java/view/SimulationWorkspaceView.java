@@ -3,16 +3,21 @@ package view;
 import common.AutoNameGenerator;
 import common.NetworkDevice;
 import controller.MasterController;
+import javafx.application.Platform;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -30,6 +35,7 @@ public class SimulationWorkspaceView {
     private MasterController masterController;
     private boolean isConnectionMode = false;
     private NetworkDeviceView firstSelectedDevice = null;
+    private LogArea logArea;
 
     private final int iconSize = 32;
     private final int imageSize = 70;
@@ -47,6 +53,8 @@ public class SimulationWorkspaceView {
      */
     public SimulationWorkspaceView(Stage stage) {
         this.stage = stage;
+        stage.setMinWidth(1200);
+        stage.setMinHeight(1000);
         initializeView();
     }
 
@@ -87,9 +95,14 @@ public class SimulationWorkspaceView {
 
         toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton, startSimulationToolBarButton, pauseSimulationToolBarButton);
         toolBar.toFront();
-
-        simulationWorkspace.getChildren().add(toolBar);
+        addNode(toolBar);
         AnchorPane.setTopAnchor(toolBar, 0.0);
+
+        logArea = new LogArea(450, 250);
+        AnchorPane.setTopAnchor(logArea, 10.0);
+        AnchorPane.setRightAnchor(logArea, 10.0);
+        logArea.setAlignment(Pos.TOP_RIGHT);
+        addNode(logArea);
 
         cursorFollowingDeviceHandler = new CursorFollowingNetworkDeviceHandler();
 
@@ -97,7 +110,7 @@ public class SimulationWorkspaceView {
 
         initializeTooltip();
 
-        scene = new Scene(simulationWorkspace, 800, 600);
+        scene = new Scene(simulationWorkspace, 1200, 1000);
     }
 
     /**
@@ -452,6 +465,14 @@ public class SimulationWorkspaceView {
      */
     public void setController(MasterController masterController) {
         this.masterController = masterController;
+    }
+
+    public void printToLogWindow(String string, Color color) {
+        Text text = new Text(string);
+        text.setFill(color);
+        Platform.runLater(() -> {
+            logArea.print(text);
+        });
     }
 }
 
