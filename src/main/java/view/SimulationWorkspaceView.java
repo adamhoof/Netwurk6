@@ -126,7 +126,7 @@ public class SimulationWorkspaceView {
         button.setGraphic(buttonIcon);
 
         button.setOnAction(buttonClickEvent -> {
-            if (!masterController.simulationPaused()) {
+            if (!masterController.simulationPaused() || cursorFollowingDeviceHandler.isFollowing()) {
                 return;
             }
             if (cursorFollowingDeviceHandler.isFollowing()) {
