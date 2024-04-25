@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PCModel extends NetworkDeviceModel {
     private IPAddress ipAddress;
-    private Network network;
     private IPAddress defaultGateway;
     private SubnetMask subnetMask;
     private final ArpCache arpCache;
@@ -39,10 +38,6 @@ public class PCModel extends NetworkDeviceModel {
     public PCModel(UUID uuid, MACAddress macAddress, String name) {
         super(uuid, macAddress, NetworkDeviceType.PC, name);
         this.arpCache = new ArpCache();
-    }
-
-    public Network getNetwork() {
-        return network;
     }
 
     public IPAddress getIpAddress() {
