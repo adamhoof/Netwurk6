@@ -3,6 +3,7 @@ package controller;
 import common.AutoNameGenerator;
 import common.NetworkDevice;
 import common.NetworkDeviceType;
+import javafx.scene.paint.Color;
 import model.*;
 import view.SimulationWorkspaceView;
 
@@ -78,18 +79,24 @@ public class MasterController {
      */
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
         if (first.getUuid() == second.getUuid()) {
+            simulationWorkspaceView.printToLogWindow("Can't connect to itself\n", Color.RED);
             return false;
         }
         NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
         NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
+
+        if (firstModel instanceof PCModel && secondModel instanceof PCModel) {
+            simulationWorkspaceView.printToLogWindow("Can't connect PC to PC\n", Color.RED);
+            return false;
+        }
 
         if (firstModel == null || secondModel == null) {
             System.out.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
             return false;
         }
 
-        if (firstModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER && secondModel.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            networksController.createWanLink((RouterModel) firstModel, (RouterModel) secondModel);
+        if (firstModel instanceof RouterModel firstRouter && secondModel instanceof RouterModel secondRouter) {
+            networksController.createWanLink(firstRouter, secondRouter);
             return true;
         }
         //For now, RouterModel handles the connection for the second device, so we need to return after adding the second model
