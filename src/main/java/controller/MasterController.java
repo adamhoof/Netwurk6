@@ -77,6 +77,9 @@ public class MasterController {
      * @return true if the connection is successful, false otherwise.
      */
     public boolean addConnection(NetworkDevice first, NetworkDevice second) {
+        if (first.getUuid() == second.getUuid()) {
+            return false;
+        }
         NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
         NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
 
