@@ -2,7 +2,6 @@ package view;
 
 import common.NetworkDevice;
 import common.NetworkDeviceType;
-import io.NetworkDeviceViewDTO;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
