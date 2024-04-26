@@ -1,5 +1,6 @@
 package view;
 
+import io.ConnectionLineDTO;
 import io.JsonExporter;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -8,13 +9,14 @@ import javafx.stage.Window;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class FileMenu extends Menu {
-    private final NetworkDeviceViewProvider provider;
+    private final NetworkDataProvider provider;
 
-    public FileMenu(String name, NetworkDeviceViewProvider provider) {
+    public FileMenu(String name, NetworkDataProvider provider) {
         super(name);
         this.provider = provider;
         MenuItem save = new MenuItem("Save");
@@ -37,20 +39,32 @@ public class FileMenu extends Menu {
             Window window = save.getParentPopup().getOwnerWindow();
             File file = fileChooser.showSaveDialog(window);
             if (file != null) {
-                saveDevicesToFile(file);
+                try {
+                    exportNetworkData(file);
+                } catch (IOException e) {
+                    System.err.println("Failed to save network data: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
 
-    private void saveDevicesToFile(File file) {
+    private void exportNetworkData(File file) throws IOException {
         JsonExporter jsonExporter = new JsonExporter();
-        try {
-            String json = jsonExporter.exportDevices(provider.getDevices());
-            Files.write(Paths.get(file.toURI()), json.getBytes());
-        } catch (IOException e) {
-            System.err.println("Failed to save devices: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
+        List<NetworkDeviceView> devices = provider.getDevices();
 
+        List<ConnectionLineDTO> connectionDTOs = new ArrayList<>();
+        for (ConnectionLine connectionLine : provider.getConnectionLines()) {
+
+            UUID startDeviceUuid = connectionLine.getStartDevice().getUuid();
+            UUID endDeviceUuid = connectionLine.getEndDevice().getUuid();
+
+            ConnectionLineDTO dto = new ConnectionLineDTO(startDeviceUuid, endDeviceUuid,
+                    connectionLine.getMiddleLabel().getText(), connectionLine.getStartLabel().getText(), connectionLine.getEndLabel().getText(),
+                    connectionLine.getStartX(), connectionLine.getStartY(), connectionLine.getEndX(), connectionLine.getEndY());
+            connectionDTOs.add(dto);
+        }
+
+        jsonExporter.exportNetworkData(devices, connectionDTOs, file);
+    }
 }

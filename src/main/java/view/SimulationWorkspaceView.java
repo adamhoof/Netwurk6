@@ -33,7 +33,8 @@ public class SimulationWorkspaceView {
     private boolean isConnectionMode = false;
     private NetworkDeviceView firstSelectedDevice = null;
     private LogArea logArea;
-    private final NetworkDeviceViewProvider networkDeviceViewProvider = new NetworkDeviceViewProvider();
+    ArrayList<ConnectionLine> connectionLines = new ArrayList<>();
+    private final NetworkDataProvider networkDataProvider = new NetworkDataProvider(new ArrayList<>(), connectionLines);
 
     private final int iconSize = 32;
     private final int imageSize = 70;
@@ -42,7 +43,6 @@ public class SimulationWorkspaceView {
 
     ToolBar toolBar;
 
-    ArrayList<ConnectionLine> connectionLines = new ArrayList<>();
 
     /**
      * Constructs a SimulationWorkspaceView with a reference to the primary stage.
@@ -92,9 +92,9 @@ public class SimulationWorkspaceView {
         Button pauseSimulationToolBarButton = createPauseSimulationButton(new ImageView(new Image("pause_icon.png")));
 
         MenuBar menuBar = new MenuBar();
-        FileMenu fileMenu = new FileMenu("File", networkDeviceViewProvider);
+        FileMenu fileMenu = new FileMenu("File", networkDataProvider);
         menuBar.getMenus().add(fileMenu);
-        AnchorPane.setTopAnchor(menuBar,0.0);
+        AnchorPane.setTopAnchor(menuBar, 0.0);
         AnchorPane.setLeftAnchor(menuBar, 0.0);
         AnchorPane.setRightAnchor(menuBar, 0.0);
         addNode(menuBar);
@@ -246,7 +246,7 @@ public class SimulationWorkspaceView {
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 setupPlacedDeviceEvents(cursorFollowingDeviceHandler.get());
                 masterController.addDevice(cursorFollowingDeviceHandler.get());
-                networkDeviceViewProvider.addDevice(cursorFollowingDeviceHandler.get());
+                networkDataProvider.addDevice(cursorFollowingDeviceHandler.get());
                 cursorFollowingDeviceHandler.place();
             }
         });
