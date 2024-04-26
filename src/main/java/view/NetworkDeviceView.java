@@ -2,6 +2,7 @@ package view;
 
 import common.NetworkDevice;
 import common.NetworkDeviceType;
+import io.NetworkDeviceViewDTO;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -39,6 +40,10 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
         this.uuid = UUID.randomUUID();
         this.getChildren().addAll(imageView, this.name);
     }
+
+    /*public NetworkDeviceView(NetworkDeviceViewDTO networkDeviceViewDTO){
+
+    }*/
 
     public NetworkDeviceType getNetworkDeviceType() {
         return networkDeviceType;

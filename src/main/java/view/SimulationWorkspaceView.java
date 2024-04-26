@@ -36,6 +36,7 @@ public class SimulationWorkspaceView {
     private boolean isConnectionMode = false;
     private NetworkDeviceView firstSelectedDevice = null;
     private LogArea logArea;
+    private final NetworkDeviceViewProvider networkDeviceViewProvider = new NetworkDeviceViewProvider();
 
     private final int iconSize = 32;
     private final int imageSize = 70;
@@ -93,13 +94,21 @@ public class SimulationWorkspaceView {
         Button startSimulationToolBarButton = createStartSimulationButton(new ImageView(new Image("start_icon.png")));
         Button pauseSimulationToolBarButton = createPauseSimulationButton(new ImageView(new Image("pause_icon.png")));
 
+        MenuBar menuBar = new MenuBar();
+        FileMenu fileMenu = new FileMenu("File", networkDeviceViewProvider);
+        menuBar.getMenus().add(fileMenu);
+        AnchorPane.setTopAnchor(menuBar,0.0);
+        AnchorPane.setLeftAnchor(menuBar, 0.0);
+        AnchorPane.setRightAnchor(menuBar, 0.0);
+        addNode(menuBar);
+
         toolBar.getItems().addAll(routerToolBarButton, switchToolBarButton, pcToolBarButton, connectorToolBarButton, startSimulationToolBarButton, pauseSimulationToolBarButton);
         toolBar.toFront();
         addNode(toolBar);
-        AnchorPane.setTopAnchor(toolBar, 0.0);
+        AnchorPane.setTopAnchor(toolBar, 30.0);
 
         logArea = new LogArea(450, 250);
-        AnchorPane.setTopAnchor(logArea, 10.0);
+        AnchorPane.setTopAnchor(logArea, 35.0);
         AnchorPane.setRightAnchor(logArea, 10.0);
         logArea.setAlignment(Pos.TOP_RIGHT);
         addNode(logArea);
@@ -233,13 +242,14 @@ public class SimulationWorkspaceView {
     }
 
     /**
-     * Configures the behavior when a cursor-following device is clicked.
+     * Configures the behavior when a cursor-following device placed on the simulation workspace (simulation workspace is clicked when device is following mouse).
      */
     private void setupCursorFollowingDeviceClickEvent() {
         simulationWorkspace.setOnMouseClicked(clickEvent -> {
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 setupPlacedDeviceEvents(cursorFollowingDeviceHandler.get());
                 masterController.addDevice(cursorFollowingDeviceHandler.get());
+                networkDeviceViewProvider.addDevice(cursorFollowingDeviceHandler.get());
                 cursorFollowingDeviceHandler.place();
             }
         });
