@@ -12,7 +12,6 @@ public class Network {
     private final SubnetMask subnetMask;
     private final NetworkType networkType;
     HashMap<Long, IPAddress> usedIpAddresses = new HashMap<>();
-    ArrayList<NetworkDeviceModel> devicesInNetwork = new ArrayList<>();
     private IPAddress currentAvailableAddress;
 
     /**
