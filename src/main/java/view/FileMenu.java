@@ -59,9 +59,7 @@ public class FileMenu extends Menu {
             UUID startDeviceUuid = connectionLine.getStartDevice().getUuid();
             UUID endDeviceUuid = connectionLine.getEndDevice().getUuid();
 
-            ConnectionLineDTO dto = new ConnectionLineDTO(startDeviceUuid, endDeviceUuid,
-                    connectionLine.getMiddleLabel().getText(), connectionLine.getStartLabel().getText(), connectionLine.getEndLabel().getText(),
-                    connectionLine.getStartX(), connectionLine.getStartY(), connectionLine.getEndX(), connectionLine.getEndY());
+            ConnectionLineDTO dto = new ConnectionLineDTO(startDeviceUuid, endDeviceUuid);
             connectionDTOs.add(dto);
         }
 
