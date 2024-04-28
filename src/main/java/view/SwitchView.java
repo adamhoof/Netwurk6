@@ -3,6 +3,8 @@ package view;
 import common.NetworkDeviceType;
 import javafx.scene.image.Image;
 
+import java.util.UUID;
+
 /**
  * Represents a switch view in a network simulation environment.
  * This class extends NetworkDeviceView to provide specific functionalities related to network switches.
@@ -14,8 +16,8 @@ public class SwitchView extends NetworkDeviceView {
      *
      * @param image the image to be displayed as the switch's icon
      */
-    public SwitchView(Image image) {
-        super(NetworkDeviceType.SWITCH, image);
+    public SwitchView(UUID uuid, Image image) {
+        super(uuid, NetworkDeviceType.SWITCH, image);
     }
 
     /**
@@ -26,6 +28,6 @@ public class SwitchView extends NetworkDeviceView {
      */
     @Override
     public NetworkDeviceView deepCopy() {
-        return new SwitchView(this.getImageView().getImage());
+        return new SwitchView(UUID.randomUUID(), this.getImageView().getImage());
     }
 }

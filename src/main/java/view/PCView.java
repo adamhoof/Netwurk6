@@ -3,6 +3,8 @@ package view;
 import common.NetworkDeviceType;
 import javafx.scene.image.Image;
 
+import java.util.UUID;
+
 /**
  * Represents a PC view in a network simulation environment.
  * This class extends NetworkDeviceView to provide specific functionalities related to personal computers within the simulation.
@@ -14,8 +16,8 @@ public class PCView extends NetworkDeviceView {
      *
      * @param image the image to be displayed as the PC's icon
      */
-    public PCView(Image image) {
-        super(NetworkDeviceType.PC, image);
+    public PCView(UUID uuid, Image image) {
+        super(uuid, NetworkDeviceType.PC, image);
     }
 
     /**
@@ -26,6 +28,6 @@ public class PCView extends NetworkDeviceView {
      */
     @Override
     public NetworkDeviceView deepCopy() {
-        return new PCView(this.getImageView().getImage());
+        return new PCView(UUID.randomUUID(), this.getImageView().getImage());
     }
 }

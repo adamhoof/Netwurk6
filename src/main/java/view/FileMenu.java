@@ -14,11 +14,13 @@ import java.util.List;
 import java.util.UUID;
 
 public class FileMenu extends Menu {
-    private final NetworkDataProvider provider;
+    ArrayList<NetworkDeviceView> deviceViews;
+    ArrayList<ConnectionLine> connectionLines;
 
-    public FileMenu(String name, NetworkDataProvider provider) {
+    public FileMenu(String name, ArrayList<NetworkDeviceView> deviceViews, ArrayList<ConnectionLine> connectionLines) {
         super(name);
-        this.provider = provider;
+        this.deviceViews = deviceViews;
+        this.connectionLines = connectionLines;
         MenuItem save = new MenuItem("Save");
         save.setOnAction(clickEvent -> saveEventHandler(save));
 
@@ -51,10 +53,9 @@ public class FileMenu extends Menu {
 
     private void exportNetworkData(File file) throws IOException {
         JsonExporter jsonExporter = new JsonExporter();
-        List<NetworkDeviceView> devices = provider.getDevices();
 
         List<ConnectionLineDTO> connectionDTOs = new ArrayList<>();
-        for (ConnectionLine connectionLine : provider.getConnectionLines()) {
+        for (ConnectionLine connectionLine : connectionLines) {
 
             UUID startDeviceUuid = connectionLine.getStartDevice().getUuid();
             UUID endDeviceUuid = connectionLine.getEndDevice().getUuid();
@@ -63,6 +64,6 @@ public class FileMenu extends Menu {
             connectionDTOs.add(dto);
         }
 
-        jsonExporter.exportNetworkData(devices, connectionDTOs, file);
+        jsonExporter.exportNetworkData(deviceViews, connectionDTOs, file);
     }
 }

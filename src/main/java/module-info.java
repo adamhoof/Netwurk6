@@ -5,6 +5,7 @@ module cz.cvut.fel.pjv.hofmaad {
     requires org.apache.logging.log4j;
     requires com.fasterxml.jackson.databind;
     requires com.google.common;
+    requires com.google.gson;
     exports entry;
     exports model;
     exports controller;

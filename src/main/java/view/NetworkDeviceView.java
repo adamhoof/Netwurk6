@@ -26,15 +26,15 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
      * Constructs a NetworkDeviceView with a specific device type and image.
      *
      * @param networkDeviceType the type of network device
-     * @param image the image representing the network device
+     * @param image             the image representing the network device
      */
-    public NetworkDeviceView(NetworkDeviceType networkDeviceType, Image image) {
+    public NetworkDeviceView(UUID uuid, NetworkDeviceType networkDeviceType, Image image) {
         this.imageView = new ImageView(image);
         this.name = new Label();
         this.name.setStyle("-fx-text-fill: #FF0000; -fx-font-weight: bold;");
         this.name.setLayoutY(this.getLayoutY());
         this.networkDeviceType = networkDeviceType;
-        this.uuid = UUID.randomUUID();
+        this.uuid = uuid;
         this.getChildren().addAll(imageView, this.name);
     }
 

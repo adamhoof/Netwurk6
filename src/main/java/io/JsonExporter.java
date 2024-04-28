@@ -1,5 +1,6 @@
 package io;
 
+import common.AutoNameGenerator;
 import view.NetworkDeviceView;
 
 import java.io.File;
@@ -25,11 +26,9 @@ public class JsonExporter {
                         device.getNetworkDeviceType()
                 ))
                 .collect(Collectors.toList()),
-                connections);
+                connections,
+                new AutoNameGeneratorDTO(AutoNameGenerator.getRouterNameCounter(), AutoNameGenerator.getSwitchNameCounter(), AutoNameGenerator.getRouterInterfaceNameCounter(), AutoNameGenerator.getPcNameCounter()));
 
         Files.write(Paths.get(file.toURI()), mapper.writeValueAsString(exportData).getBytes());
-    }
-
-    public record NetworkData(List<NetworkDeviceViewDTO> devices, List<ConnectionLineDTO> connections) {
     }
 }

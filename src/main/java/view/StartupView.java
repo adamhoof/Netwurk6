@@ -1,10 +1,23 @@
 package view;
 
+import common.AutoNameGenerator;
+import controller.MasterController;
+import controller.NetworksController;
+import controller.SimulationController;
+import io.*;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import model.NetworkDeviceStorage;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 public class StartupView {
 
@@ -23,21 +36,49 @@ public class StartupView {
 
         Button newButton = new Button("New");
         newButton.setPrefSize(200, 40);
-        newButton.setOnAction(event -> {});
+        newButton.setOnAction(event -> {
+            SimulationWorkspaceView simulationWorkspaceView = new SimulationWorkspaceView(stage);
+            NetworksController networksController = new NetworksController();
+            NetworkDeviceStorage networkDeviceStorage = new NetworkDeviceStorage();
+            SimulationController simulationController = new SimulationController(simulationWorkspaceView, networkDeviceStorage, networksController);
+            MasterController masterController = new MasterController(simulationWorkspaceView, networkDeviceStorage, networksController, simulationController);
+
+            simulationWorkspaceView.display();
+
+        });
 
         Button loadButton = new Button("Load");
         loadButton.setPrefSize(200, 40);
         loadButton.setOnAction(event -> {
-            // TODO prompt for loading a saved simulation from file
+            FileChooser fileChooser = new FileChooser();
+            FileChooser.ExtensionFilter jsonFilter = new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json");
+            fileChooser.getExtensionFilters().add(jsonFilter);
+
+            File selectedFile = fileChooser.showOpenDialog(null); // Opens a file selection dialog
+
+            if (selectedFile != null) {
+                Platform.runLater(() -> {
+                    JsonImporter jsonImporter = new JsonImporter();
+                    System.out.println("Loading simulation from: " + selectedFile.getAbsolutePath());
+                    SimulationWorkspaceView simulationWorkspaceView = new SimulationWorkspaceView(stage);
+                    NetworksController networksController = new NetworksController();
+                    NetworkDeviceStorage networkDeviceStorage = new NetworkDeviceStorage();
+                    SimulationController simulationController = new SimulationController(simulationWorkspaceView, networkDeviceStorage, networksController);
+                    MasterController masterController = new MasterController(simulationWorkspaceView, networkDeviceStorage, networksController, simulationController);
+
+                    NetworkData networkData = jsonImporter.importNetworkData(selectedFile);
+                    insertDevices(networkData.devices(), simulationWorkspaceView, masterController);
+                    insertConnections(networkData, simulationWorkspaceView, masterController);
+                    AutoNameGenerator.setRouterNameCounter(networkData.autoNameGeneratorDTO().routerNameCounter());
+                    AutoNameGenerator.setSwitchNameCounter(networkData.autoNameGeneratorDTO().switchNameCounter());
+                    AutoNameGenerator.setRouterInterfaceNameCounter(networkData.autoNameGeneratorDTO().routerInterfaceNameCounter());
+                    AutoNameGenerator.setPcNameCounter(networkData.autoNameGeneratorDTO().pcNameCounter());
+                    simulationWorkspaceView.display();
+                });
+            }
         });
 
-        Button optionsButton = new Button("Options");
-        optionsButton.setPrefSize(200, 40);
-        optionsButton.setOnAction(event -> {
-            // TODO show options/settings screen
-        });
-
-        menu.getChildren().addAll(newButton, loadButton, optionsButton);
+        menu.getChildren().addAll(newButton, loadButton);
 
         scene = new Scene(menu, 800, 600);
     }
@@ -46,5 +87,60 @@ public class StartupView {
         stage.setTitle("SpudrNet6");
         stage.setScene(scene);
         stage.show();
+    }
+
+    public void insertDevices(List<NetworkDeviceViewDTO> devices, SimulationWorkspaceView simulationWorkspaceView, MasterController masterController) {
+        simulationWorkspaceView.initializeView();
+
+        NetworkDeviceView networkDeviceView;
+        for (NetworkDeviceViewDTO deviceData : devices) {
+            switch (deviceData.type()) {
+                case ROUTER -> {
+                    networkDeviceView = new RouterView(deviceData.uuid(), new Image("router_image.png"));
+                }
+                case SWITCH -> {
+                    networkDeviceView = new SwitchView(deviceData.uuid(), new Image("switch_image.png"));
+                }
+                case PC -> {
+                    networkDeviceView = new PCView(deviceData.uuid(), new Image("server_image.png"));
+                }
+                case null, default -> {
+                    return;
+                }
+            }
+            networkDeviceView.setLayoutX(deviceData.x());
+            networkDeviceView.setLayoutY(deviceData.y());
+            networkDeviceView.setName(deviceData.name());
+
+            simulationWorkspaceView.setupPlacedDeviceEvents(networkDeviceView);
+
+            simulationWorkspaceView.addNode(networkDeviceView);
+            simulationWorkspaceView.addDeviceView(networkDeviceView);
+            masterController.addDevice(networkDeviceView);
+        }
+    }
+
+    public void insertConnections(NetworkData networkData, SimulationWorkspaceView simulationWorkspaceView, MasterController masterController) {
+        for (ConnectionLineDTO connectionLine : networkData.connections()) {
+            NetworkDeviceView startDevice = simulationWorkspaceView.getNetworkDeviceViews().stream()
+                    .filter(device -> device.getUuid().equals(connectionLine.startDeviceId()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Device with UUID " + connectionLine.startDeviceId() + " not found"));
+
+            NetworkDeviceView endDevice = simulationWorkspaceView.getNetworkDeviceViews().stream()
+                    .filter(device -> device.getUuid().equals(connectionLine.endDeviceId()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Device with UUID " + connectionLine.startDeviceId() + " not found"));
+
+            masterController.addConnection(startDevice, endDevice);
+            Map<String, String> labels = masterController.setupInitialLabelsForConnection(startDevice, endDevice);
+            simulationWorkspaceView.addConnectionLine(startDevice, endDevice, labels.get("Middle"), labels.get("Start"), labels.get("End"));
+            ConnectionLine connection = simulationWorkspaceView.getConnectionLines().getLast();
+
+            connection.startXProperty().bind(startDevice.layoutXProperty().add(startDevice.widthProperty().divide(2)));
+            connection.startYProperty().bind(startDevice.layoutYProperty().add(startDevice.heightProperty().divide(2)));
+            connection.endXProperty().bind(endDevice.layoutXProperty().add(endDevice.widthProperty().divide(2)));
+            connection.endYProperty().bind(endDevice.layoutYProperty().add(endDevice.heightProperty().divide(2)));
+        }
     }
 }

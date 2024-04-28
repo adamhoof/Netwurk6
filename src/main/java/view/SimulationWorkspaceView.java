@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Represents the main workspace of a network simulation environment.
@@ -35,7 +36,7 @@ public class SimulationWorkspaceView {
     private NetworkDeviceView firstSelectedDevice = null;
     private LogArea logArea;
     ArrayList<ConnectionLine> connectionLines = new ArrayList<>();
-    private final NetworkDataProvider networkDataProvider = new NetworkDataProvider(new ArrayList<>(), connectionLines);
+    ArrayList<NetworkDeviceView> networkDeviceViews = new ArrayList<>();
 
     private final int iconSize = 32;
     private final int imageSize = 70;
@@ -74,16 +75,24 @@ public class SimulationWorkspaceView {
         return null;
     }
 
+    public ArrayList<ConnectionLine> getConnectionLines() {
+        return connectionLines;
+    }
+
+    public ArrayList<NetworkDeviceView> getNetworkDeviceViews() {
+        return networkDeviceViews;
+    }
+
     /**
      * Initializes the view and its components.
      */
-    private void initializeView() {
+    public void initializeView() {
         simulationWorkspace = new AnchorPane();
         toolBar = new ToolBar();
 
-        RouterView routerView = new RouterView(new Image("router_image.png"));
-        SwitchView switchView = new SwitchView(new Image("switch_image.png"));
-        PCView pcView = new PCView(new Image("server_image.png"));
+        RouterView routerView = new RouterView(UUID.randomUUID(), new Image("router_image.png"));
+        SwitchView switchView = new SwitchView(UUID.randomUUID(), new Image("switch_image.png"));
+        PCView pcView = new PCView(UUID.randomUUID(), new Image("server_image.png"));
 
         Button routerToolBarButton = createNetworkDeviceButton(routerView, new Image("router_icon.png"));
         Button switchToolBarButton = createNetworkDeviceButton(switchView, new Image("switch_icon.png"));
@@ -93,7 +102,7 @@ public class SimulationWorkspaceView {
         Button pauseSimulationToolBarButton = createPauseSimulationButton(new ImageView(new Image("pause_icon.png")));
 
         MenuBar menuBar = new MenuBar();
-        FileMenu fileMenu = new FileMenu("File", networkDataProvider);
+        FileMenu fileMenu = new FileMenu("File", networkDeviceViews, connectionLines);
         menuBar.getMenus().add(fileMenu);
         AnchorPane.setTopAnchor(menuBar, 0.0);
         AnchorPane.setLeftAnchor(menuBar, 0.0);
@@ -137,7 +146,7 @@ public class SimulationWorkspaceView {
                 printToLogWindow("Pause simulation before making adjustments\n", Color.RED);
                 return;
             }
-            if (cursorFollowingDeviceHandler.isFollowing()){
+            if (cursorFollowingDeviceHandler.isFollowing()) {
                 return;
             }
             isConnectionMode = false;
@@ -250,7 +259,7 @@ public class SimulationWorkspaceView {
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 setupPlacedDeviceEvents(cursorFollowingDeviceHandler.get());
                 masterController.addDevice(cursorFollowingDeviceHandler.get());
-                networkDataProvider.addDevice(cursorFollowingDeviceHandler.get());
+                addDeviceView(cursorFollowingDeviceHandler.get());
                 cursorFollowingDeviceHandler.place();
             }
         });
@@ -262,7 +271,7 @@ public class SimulationWorkspaceView {
      *
      * @param networkDeviceView the view representation of the network device
      */
-    private void setupPlacedDeviceEvents(NetworkDeviceView networkDeviceView) {
+    public void setupPlacedDeviceEvents(NetworkDeviceView networkDeviceView) {
         final double[] cursorDistanceFromShapeTopLeft = new double[2];
         setupPlacedDeviceClickEvent(networkDeviceView, cursorDistanceFromShapeTopLeft);
         setupPlacedDeviceDragEvent(networkDeviceView, cursorDistanceFromShapeTopLeft);
@@ -378,13 +387,19 @@ public class SimulationWorkspaceView {
      * @param startLabel      the label near the start of the connection line
      * @param endLabel        the label near the end of the connection line
      */
-    private void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView, String middleLabel, String startLabel, String endLabel) {
+    public void addConnectionLine(NetworkDeviceView startDeviceView, NetworkDeviceView endDeviceView, String middleLabel, String startLabel, String endLabel) {
         double startX = startDeviceView.getLayoutX() + startDeviceView.getWidth() / 2;
         double startY = startDeviceView.getLayoutY() + startDeviceView.getHeight() / 2;
         double endX = endDeviceView.getLayoutX() + endDeviceView.getWidth() / 2;
         double endY = endDeviceView.getLayoutY() + endDeviceView.getHeight() / 2;
 
         ConnectionLine connectionLine = new ConnectionLine(startX, startY, endX, endY, startDeviceView, endDeviceView, middleLabel, startLabel, endLabel);
+
+        connectionLine.startXProperty().bind(startDeviceView.layoutXProperty().add(startDeviceView.widthProperty().divide(2)));
+        connectionLine.startYProperty().bind(startDeviceView.layoutYProperty().add(startDeviceView.heightProperty().divide(2)));
+        connectionLine.endXProperty().bind(endDeviceView.layoutXProperty().add(endDeviceView.widthProperty().divide(2)));
+        connectionLine.endYProperty().bind(endDeviceView.layoutYProperty().add(endDeviceView.heightProperty().divide(2)));
+
 
         double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
         double centerY = (connectionLine.getStartY() + connectionLine.getEndY()) / 2;
@@ -405,6 +420,10 @@ public class SimulationWorkspaceView {
         connectionLines.add(connectionLine);
     }
 
+    public void addDeviceView(NetworkDeviceView networkDeviceView) {
+        networkDeviceViews.add(networkDeviceView);
+    }
+
     /**
      * Updates the position of a connection line based on the movement of network devices.
      *
@@ -412,17 +431,6 @@ public class SimulationWorkspaceView {
      * @param connectionLine    the connection line to be updated
      */
     private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine connectionLine) {
-
-        if (networkDeviceView.equals(connectionLine.getStartDevice())) {
-            connectionLine.setStartX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
-            connectionLine.setStartY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
-        }
-
-        if (networkDeviceView.equals(connectionLine.getEndDevice())) {
-            connectionLine.setEndX(networkDeviceView.getLayoutX() + networkDeviceView.getWidth() / 2);
-            connectionLine.setEndY(networkDeviceView.getLayoutY() + networkDeviceView.getHeight() / 2);
-        }
-
         double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
         double centerY = (connectionLine.getStartY() + connectionLine.getEndY()) / 2;
 
