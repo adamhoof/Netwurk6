@@ -1,14 +1,18 @@
 package controller;
 
+import com.google.common.eventbus.Subscribe;
 import common.AutoNameGenerator;
 import common.NetworkDevice;
 import common.NetworkDeviceType;
+import common.UpdateLabelsEvent;
 import javafx.scene.paint.Color;
 import model.*;
+import view.ConnectionLine;
 import view.SimulationWorkspaceView;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -36,6 +40,40 @@ public class MasterController {
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
         this.simulationController = simulationController;
+        simulationController.registerObserver(this);
+    }
+
+    /**
+     * Handles an update event for a PC model.
+     * This method is invoked when an {@link UpdateLabelsEvent} is posted on the event bus. It retrieves the {@link PCModel} object from the event and performs the following actions:
+     * 1. Extracts the associated {@link NetworkDevice} from the PC model.
+     * 2. If the network device is a {@link RouterInterface}, it retrieves the actual router it's connected to visually.
+     * 3. Finds the corresponding {@link ConnectionLine} object in the simulation workspace view based on the PC model and network device.
+     * 4. Updates the appropriate label (start or end) on the connection line based on the PC model's UUID and retrieved IP address (using the last octet).
+     * 5. If no connection line is found, a message is logged indicating the issue.
+     *
+     * @param event the {@link UpdateLabelsEvent} containing the PC model data
+     */
+    @Subscribe
+    public void handleUpdateLabels(UpdateLabelsEvent event) {
+        PCModel pcModel = event.getPcModel();
+
+        NetworkDevice networkDevice = pcModel.getConnection();
+        if (networkDevice instanceof RouterInterface routerInterface) {
+            networkDevice = routerInterface.getInterfacesRouter();
+        }
+        ConnectionLine connectionLine = simulationWorkspaceView.getConnectionLine(pcModel, networkDevice);
+        if (connectionLine == null) {
+            System.out.println("no connection found for label update");
+            return;
+        }
+
+        if (connectionLine.getStartDevice().getUuid() == pcModel.getUuid()) {
+            connectionLine.getStartLabel().setText("." + pcModel.getIpAddress().getOctets()[3]);
+        } else {
+            connectionLine.getEndLabel().setText("." + pcModel.getIpAddress().getOctets()[3]);
+        }
+
     }
 
     /**
@@ -90,6 +128,11 @@ public class MasterController {
             return false;
         }
 
+        if ((firstModel instanceof PCModel pc1 && pc1.getConnection() != null) || secondModel instanceof PCModel pc2 && pc2.getConnection() != null) {
+            simulationWorkspaceView.printToLogWindow("Can't connect PC to multiple networks\n", Color.RED);
+            return false;
+        }
+
         if (firstModel == null || secondModel == null) {
             System.out.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
             return false;
@@ -122,14 +165,67 @@ public class MasterController {
         labels.put("Start", "");
         labels.put("End", "");
         if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
-            Network network = networksController.getSharedNetwork(deviceStorage.getRouterModel(first.getUuid()), deviceStorage.getRouterModel(second.getUuid()));
+            RouterModel firstRouterModel = deviceStorage.getRouterModel(first.getUuid());
+            RouterModel secondRouterModel = deviceStorage.getRouterModel(second.getUuid());
+            Network network = networksController.getSharedNetwork(firstRouterModel, secondRouterModel);
             if (network != null) {
                 labels.put("Middle", network.getNetworkIpAddress().toString());
                 labels.put("Start", "." + deviceStorage.getRouterModel(first.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
                 labels.put("End", "." + deviceStorage.getRouterModel(second.getUuid()).getIpAddressInNetwork(network).getOctets()[3]);
             }
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            RouterModel routerModel = deviceStorage.getRouterModel(second.getUuid());
+            RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
+
+            String stringPcIp = determineLabelIpPcSide(first);
+
+            labels.put("Start", stringPcIp);
+            labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
+            labels.put("End", "." + routerInterface.getIpAddress().getOctets()[3]);
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
+            RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
+            RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
+
+            String stringPcIp = determineLabelIpPcSide(second);
+
+            labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
+            labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
+            labels.put("End", stringPcIp);
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
+            RouterModel routerModel = deviceStorage.getRouterModel(second.getUuid());
+            RouterInterface routerInterface = routerModel.getLastRouterInterface();
+
+            labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
+            labels.put("End", "." + routerInterface.getIpAddress().getOctets()[3]);
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.SWITCH) {
+            RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
+            RouterInterface routerInterface = routerModel.getLastRouterInterface();
+
+            labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
+            labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
         }
         return labels;
+    }
+
+    /**
+     * Determines the IP address of a PC.
+     * This method retrieves the PC model associated with the provided network device using its UUID and then extracts the IP address from the PC model.
+     *
+     * @param pc the {@link NetworkDevice} object for which to determine the IP address
+     * @return a String representing the IP address. If no IP address is found, it returns "no_ip".
+     * @throws NullPointerException if the provided `second` argument is null
+     */
+    private String determineLabelIpPcSide(NetworkDevice pc) {
+        PCModel pcModel = deviceStorage.getPcModel(pc.getUuid());
+
+        IPAddress ipAddress = pcModel.getIpAddress();
+        String stringPcIp = "";
+        if (Objects.equals(ipAddress, IPAddress.nullIpAddress())) {
+            stringPcIp += "no_ip";
+        } else {
+            stringPcIp = "." + ipAddress.getOctets()[3];
+        }
+        return stringPcIp;
     }
 
     /**

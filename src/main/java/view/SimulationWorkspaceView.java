@@ -2,6 +2,7 @@ package view;
 
 import common.AutoNameGenerator;
 import common.NetworkDevice;
+import common.NetworkDeviceType;
 import controller.MasterController;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
@@ -135,6 +136,7 @@ public class SimulationWorkspaceView {
             if (!masterController.simulationPaused() || cursorFollowingDeviceHandler.isFollowing()) {
                 return;
             }
+            isConnectionMode = false;
             if (cursorFollowingDeviceHandler.isFollowing()) {
                 removeNode(cursorFollowingDeviceHandler.get());
             }
@@ -272,12 +274,15 @@ public class SimulationWorkspaceView {
      */
     private void setupPlacedDeviceHoverEvent(NetworkDeviceView networkDeviceView) {
         networkDeviceView.setOnMouseEntered(hoverEnterEvent -> {
-            String string = "Device type: " + networkDeviceView.getNetworkDeviceType().toString() + "\n" +
-                    "Routing table: " + "\n" + masterController.getDeviceConfigurations(networkDeviceView);
-            updateTooltipContent(string);
+            if (networkDeviceView.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
 
-            Point2D p = networkDeviceView.localToScreen(networkDeviceView.getLayoutBounds().getMaxX(), networkDeviceView.getLayoutBounds().getMaxY());
-            labelsTooltip.show(networkDeviceView, p.getX(), p.getY());
+                String string = "Device type: " + networkDeviceView.getNetworkDeviceType().toString() + "\n" +
+                        "Routing table: " + "\n" + masterController.getDeviceConfigurations(networkDeviceView);
+                updateTooltipContent(string);
+
+                Point2D p = networkDeviceView.localToScreen(networkDeviceView.getLayoutBounds().getMaxX(), networkDeviceView.getLayoutBounds().getMaxY());
+                labelsTooltip.show(networkDeviceView, p.getX(), p.getY());
+            }
         });
 
         networkDeviceView.setOnMouseExited(hoverExitedEvent -> {

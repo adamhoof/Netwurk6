@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Handles its network configuration and connectivity, including ARP caching.
  */
 public class PCModel extends NetworkDeviceModel {
-    private IPAddress ipAddress;
+    private IPAddress ipAddress = IPAddress.nullIpAddress();
     private IPAddress defaultGateway;
     private SubnetMask subnetMask;
     private final ArpCache arpCache;

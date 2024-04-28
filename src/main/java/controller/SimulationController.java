@@ -1,5 +1,6 @@
 package controller;
 
+import common.UpdateLabelsEvent;
 import javafx.animation.PathTransition;
 import javafx.application.Platform;
 import javafx.scene.paint.Color;
@@ -16,14 +17,18 @@ import view.ConnectionLine;
 import view.SimulationWorkspaceView;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.common.eventbus.EventBus;
 
 /**
  * Controls the simulation of network communications, handling animations, and packet transmissions.
  */
 public class SimulationController {
+    private final EventBus eventBus = new EventBus();
     private final ScheduledExecutorService threadPool;
     private final BlockingQueue<Pair<NetworkConnection, Frame>> outboundQueue;
     private final NetworkDeviceStorage storage;
@@ -50,6 +55,14 @@ public class SimulationController {
         this.storage = storage;
         this.networksController = networksController;
         this.simulationWorkspaceView = simulationWorkspaceView;
+    }
+
+    public void registerObserver(Object observer) {
+        eventBus.register(observer);
+    }
+
+    public void updateLabelsRequest(PCModel pcModel) {
+        eventBus.post(new UpdateLabelsEvent(pcModel)); // Publish the event with PCModel
     }
 
     /**
@@ -291,6 +304,8 @@ public class SimulationController {
                 logger.debug("Recipient {}, ip {} received DHCP OFFER MESSAGE, body -> DG {}, Offered ip {}, Subnetmask {}", pc, pc.getIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getSubnetMask());
                 pc.configure(dhcpOfferMessage.getOfferedIpAddress(), dhcpOfferMessage.getDefaultGateway(), dhcpOfferMessage.getSubnetMask());
                 pc.updateArp(dhcpOfferMessage.getDefaultGateway(), frame.getSourceMac());
+                updateLabelsRequest(pc);
+
                 simulationWorkspaceView.printToLogWindow(String.format("%s sending DHCP-Response\n", pc), Color.ORANGE);
                 sendDhcpResponse(new NetworkConnection(pc, networkConnection.getStartDevice()),
                         pc.getMacAddress(),
@@ -435,7 +450,7 @@ public class SimulationController {
             IPAddress forwardToIp = frame.getPacket().getDestinationIp();
             RouterModel router = routerInterface.getInterfacesRouter();
 
-            ConcurrentHashMap<Network, RouterInterface> networkRouterInterfaceMap = router.getRouterInterfaces();
+            LinkedHashMap<Network, RouterInterface> networkRouterInterfaceMap = router.getRouterInterfaces();
 
             logger.info("{}, ip {} is looking for appropriate subnet", routerInterface, routerInterface.getIpAddress());
             for (ConcurrentHashMap.Entry<Network, RouterInterface> entry : networkRouterInterfaceMap.entrySet()) {

@@ -83,4 +83,6 @@ public class Network {
     public SubnetMask getSubnetMask() {
         return subnetMask;
     }
+
+
 }

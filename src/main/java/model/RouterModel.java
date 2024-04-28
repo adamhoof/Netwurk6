@@ -6,6 +6,7 @@ import javafx.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Represents a router in a network simulation, managing LAN networks, routing tables,
@@ -16,14 +17,14 @@ public class RouterModel extends NetworkDeviceModel {
     private final IPAddress currentAvailableLanNetworkIp = new IPAddress(192, 168, 1, 0);
     private final SubnetMask defaultLanSubnetMask = new SubnetMask(24);
     private final ArrayList<LanNetwork> lanNetworks = new ArrayList<>();
-    private final ConcurrentHashMap<Network, RouterInterface> routerInterfaces = new ConcurrentHashMap<>();
+    private final LinkedHashMap<Network, RouterInterface> routerInterfaces = new LinkedHashMap<>();
     private final ArpCache arpCache;
     private final HashSet<NetworkDeviceModel> directConnections = new HashSet<>();
 
     /**
      * Constructor for RouterModel, initializes a router with a UUID and MAC address.
      *
-     * @param uuid The unique identifier for the router.
+     * @param uuid       The unique identifier for the router.
      * @param macAddress The MAC address of the router.
      */
     public RouterModel(UUID uuid, MACAddress macAddress) {
@@ -35,9 +36,9 @@ public class RouterModel extends NetworkDeviceModel {
     /**
      * Constructor for RouterModel, initializes a router with a UUID, MAC address, and a name.
      *
-     * @param uuid The unique identifier for the router.
+     * @param uuid       The unique identifier for the router.
      * @param macAddress The MAC address of the router.
-     * @param name The name of the router.
+     * @param name       The name of the router.
      */
     public RouterModel(UUID uuid, MACAddress macAddress, String name) {
         super(uuid, macAddress, NetworkDeviceType.ROUTER, name);
@@ -66,7 +67,7 @@ public class RouterModel extends NetworkDeviceModel {
     /**
      * Processes a received routing entry and updates the routing table accordingly.
      *
-     * @param receivedEntry The received routing entry.
+     * @param receivedEntry   The received routing entry.
      * @param sourceIPAddress The IP address from which the routing information was received.
      */
     private void processReceivedEntry(RouteEntry receivedEntry, IPAddress sourceIPAddress) {
@@ -93,7 +94,7 @@ public class RouterModel extends NetworkDeviceModel {
      * Updates the router's routing table based on a received routing table from another router.
      *
      * @param receivedRoutingTable The routing table received from another router.
-     * @param sourceIPAddress The source IP address of the router that sent the routing table.
+     * @param sourceIPAddress      The source IP address of the router that sent the routing table.
      */
     public void updateRoutingTable(RoutingTable receivedRoutingTable, IPAddress sourceIPAddress) {
         for (RouteEntry entry : receivedRoutingTable.getEntries()) {
@@ -172,7 +173,7 @@ public class RouterModel extends NetworkDeviceModel {
      * Adds a router interface to a specified network.
      *
      * @param routerInterface The router interface to add.
-     * @param network The network to which the router interface should be added.
+     * @param network         The network to which the router interface should be added.
      */
     public void addRouterInterface(RouterInterface routerInterface, Network network) {
         routerInterfaces.put(network, routerInterface);
@@ -183,7 +184,7 @@ public class RouterModel extends NetworkDeviceModel {
      *
      * @return A concurrent hash map of networks to their corresponding router interfaces.
      */
-    public ConcurrentHashMap<Network, RouterInterface> getRouterInterfaces() {
+    public LinkedHashMap<Network, RouterInterface> getRouterInterfaces() {
         return routerInterfaces;
     }
 
@@ -239,7 +240,7 @@ public class RouterModel extends NetworkDeviceModel {
     /**
      * Updates the ARP cache with a new IP and MAC address mapping.
      *
-     * @param ipAddress The IP address to map.
+     * @param ipAddress  The IP address to map.
      * @param macAddress The MAC address to map to the IP address.
      */
     public void updateArp(IPAddress ipAddress, MACAddress macAddress) {
@@ -255,4 +256,19 @@ public class RouterModel extends NetworkDeviceModel {
     public MACAddress queryArp(IPAddress ipAddress) {
         return arpCache.getMAC(ipAddress);
     }
+
+    public RouterInterface getLastRouterInterface() {
+        if (routerInterfaces.isEmpty()) {
+            System.out.println("no interfaces found");
+            return null;
+        }
+
+        Iterator<RouterInterface> iterator = routerInterfaces.values().iterator();
+        RouterInterface lastInterface = null;
+        while (iterator.hasNext()) {
+            lastInterface = iterator.next();
+        }
+        return lastInterface;
+    }
+
 }
