@@ -145,8 +145,9 @@ public class SimulationController {
     public void pickRandomLanCommunication() {
         logger.debug("Picking PC communication");
         ArrayList<PCModel> pcModels = storage.getPcModels();
-        if (pcModels.isEmpty()) {
-            logger.warn("No pc models available");
+        if (pcModels.size() < 2) {
+            simulationWorkspaceView.printToLogWindow("Place more than 1 PC to start PC<->PC communication\n", Color.RED);
+            logger.warn("Place more than 1 PC to start PC<->PC communication");
             return;
         }
         Random random = new Random();

@@ -200,10 +200,8 @@ public class MasterController {
             labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
             labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
         } else if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.SWITCH){
-            System.out.println("fuck");
             labels.put("Start", "no_ip");
         } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.PC){
-            System.out.println("fuck");
             labels.put("End", "no_ip");
         }
         return labels;

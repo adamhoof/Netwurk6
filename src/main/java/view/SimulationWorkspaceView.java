@@ -133,13 +133,14 @@ public class SimulationWorkspaceView {
         button.setGraphic(buttonIcon);
 
         button.setOnAction(buttonClickEvent -> {
-            if (!masterController.simulationPaused() || cursorFollowingDeviceHandler.isFollowing()) {
+            if (!masterController.simulationPaused()) {
+                printToLogWindow("Pause simulation before making adjustments\n", Color.RED);
+                return;
+            }
+            if (cursorFollowingDeviceHandler.isFollowing()){
                 return;
             }
             isConnectionMode = false;
-            if (cursorFollowingDeviceHandler.isFollowing()) {
-                removeNode(cursorFollowingDeviceHandler.get());
-            }
             spawn(networkDeviceView);
         });
 
@@ -161,6 +162,7 @@ public class SimulationWorkspaceView {
 
         connectorButton.setOnAction(clickEvent -> {
             if (!masterController.simulationPaused()) {
+                printToLogWindow("Pause simulation before making adjustments\n", Color.RED);
                 return;
             }
             isConnectionMode = true;
@@ -330,6 +332,7 @@ public class SimulationWorkspaceView {
     private void setupPlacedDeviceDragEvent(NetworkDeviceView networkDeviceView, double[] cursorDistanceFromShapeTopLeft) {
         networkDeviceView.setOnMouseDragged(dragEvent -> {
             if (!masterController.simulationPaused()) {
+                printToLogWindow("Pause simulation before making adjustments\n", Color.RED);
                 return;
             }
             labelsTooltip.hide();
