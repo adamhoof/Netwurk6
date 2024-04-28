@@ -305,7 +305,7 @@ public class SimulationWorkspaceView {
                     if (!masterController.addConnection(firstSelectedDevice, networkDeviceView)) {
                         System.out.println("Unable to connect devices");
                     } else {
-                        Map<String, String> labels = masterController.getLabelsForConnection(firstSelectedDevice, networkDeviceView);
+                        Map<String, String> labels = masterController.setupInitialLabelsForConnection(firstSelectedDevice, networkDeviceView);
                         addConnectionLine(firstSelectedDevice, networkDeviceView, labels.get("Middle"), labels.get("Start"), labels.get("End"));
                     }
                     isConnectionMode = false;

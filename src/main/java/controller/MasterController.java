@@ -159,7 +159,7 @@ public class MasterController {
      * @param second The second network device.
      * @return A map containing label descriptions.
      */
-    public Map<String, String> getLabelsForConnection(NetworkDevice first, NetworkDevice second) {
+    public Map<String, String> setupInitialLabelsForConnection(NetworkDevice first, NetworkDevice second) {
         Map<String, String> labels = new HashMap<>();
         labels.put("Middle", "");
         labels.put("Start", "");
@@ -177,20 +177,16 @@ public class MasterController {
             RouterModel routerModel = deviceStorage.getRouterModel(second.getUuid());
             RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
 
-            String stringPcIp = determineLabelIpPcSide(first);
-
-            labels.put("Start", stringPcIp);
+            labels.put("Start", "no_ip");
             labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
             labels.put("End", "." + routerInterface.getIpAddress().getOctets()[3]);
         } else if (first.getNetworkDeviceType() == NetworkDeviceType.ROUTER && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
             RouterModel routerModel = deviceStorage.getRouterModel(first.getUuid());
             RouterInterface routerInterface = routerModel.getDirectConnectionLanInterface();
 
-            String stringPcIp = determineLabelIpPcSide(second);
-
             labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
             labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
-            labels.put("End", stringPcIp);
+            labels.put("End", "no_ip");
         } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.ROUTER) {
             RouterModel routerModel = deviceStorage.getRouterModel(second.getUuid());
             RouterInterface routerInterface = routerModel.getLastRouterInterface();
@@ -203,6 +199,12 @@ public class MasterController {
 
             labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
             labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.SWITCH){
+            System.out.println("fuck");
+            labels.put("Start", "no_ip");
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.PC){
+            System.out.println("fuck");
+            labels.put("End", "no_ip");
         }
         return labels;
     }
