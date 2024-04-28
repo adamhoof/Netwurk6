@@ -541,20 +541,6 @@ public class SimulationController {
     }
 
     /**
-     * Sends an ARP response over a network connection.
-     *
-     * @param networkConnection  The network connection over which the ARP response is sent.
-     * @param sourceMac          The MAC address of the sender.
-     * @param dstMac             The destination MAC address.
-     * @param sourceIpAddress    The IP address of the sender.
-     * @param dstIpAddress       The IP address of the requester.
-     * @param arpResponseMessage The ARP response message containing the MAC address for the requested IP.
-     */
-    public void sendArpResponse(NetworkConnection networkConnection, MACAddress sourceMac, MACAddress dstMac, IPAddress sourceIpAddress, IPAddress dstIpAddress, ArpResponseMessage arpResponseMessage) {
-        sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, arpResponseMessage));
-    }
-
-    /**
      * Sends a frame over the network with visual animations representing the packet transfer.
      * This method is intended to be called on the JavaFX application thread.
      *

@@ -30,19 +30,6 @@ public class Network {
     }
 
     /**
-     * Adds a device to the network.
-     *
-     * @param networkDeviceModel the device model to be added to the network
-     */
-    public void addDevice(NetworkDeviceModel networkDeviceModel) {
-        devicesInNetwork.add(networkDeviceModel);
-    }
-
-    public ArrayList<NetworkDeviceModel> getDevicesInNetwork() {
-        return devicesInNetwork;
-    }
-
-    /**
      * Retrieves the next available IP address within the network.
      *
      * @return the next available IP address, or null if no addresses are available

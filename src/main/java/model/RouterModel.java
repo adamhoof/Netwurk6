@@ -2,11 +2,8 @@ package model;
 
 import common.AutoNameGenerator;
 import common.NetworkDeviceType;
-import javafx.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Represents a router in a network simulation, managing LAN networks, routing tables,
@@ -195,15 +192,6 @@ public class RouterModel extends NetworkDeviceModel {
      */
     public IPAddress getCurrentAvailableLanNetworkIp() {
         return currentAvailableLanNetworkIp;
-    }
-
-    /**
-     * Retrieves the direct connection LAN network IP and interface.
-     *
-     * @return A pair containing the LAN network and its corresponding IP address.
-     */
-    public Pair<LanNetwork, IPAddress> getDirectConnectionLanNetworkIp() {
-        return new Pair<>(lanNetworks.getFirst(), routerInterfaces.get(lanNetworks.getFirst()).getIpAddress());
     }
 
     /**
