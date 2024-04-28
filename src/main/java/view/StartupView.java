@@ -135,12 +135,6 @@ public class StartupView {
             masterController.addConnection(startDevice, endDevice);
             Map<String, String> labels = masterController.setupInitialLabelsForConnection(startDevice, endDevice);
             simulationWorkspaceView.addConnectionLine(startDevice, endDevice, labels.get("Middle"), labels.get("Start"), labels.get("End"));
-            ConnectionLine connection = simulationWorkspaceView.getConnectionLines().getLast();
-
-            connection.startXProperty().bind(startDevice.layoutXProperty().add(startDevice.widthProperty().divide(2)));
-            connection.startYProperty().bind(startDevice.layoutYProperty().add(startDevice.heightProperty().divide(2)));
-            connection.endXProperty().bind(endDevice.layoutXProperty().add(endDevice.widthProperty().divide(2)));
-            connection.endYProperty().bind(endDevice.layoutYProperty().add(endDevice.heightProperty().divide(2)));
         }
     }
 }
