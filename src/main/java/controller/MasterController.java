@@ -85,7 +85,7 @@ public class MasterController {
                 LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddressInNetwork(network);
                 RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel, network);
-                routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
+                routerInterface.setName(AutoNameGenerator.getInstance().generateRouterInterfaceName());
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
                 deviceStorage.add(routerInterface);

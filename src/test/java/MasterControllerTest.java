@@ -24,7 +24,7 @@ public class MasterControllerTest {
         MasterController masterController = new MasterController(mockView, storage, new NetworksController(), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
-        PCView pcView = new PCView(mockImage);
+        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
         masterController.addDevice(pcView);
         PCModel pcModel = storage.getPcModel(pcView.getUuid());
 
@@ -40,8 +40,8 @@ public class MasterControllerTest {
         MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
-        RouterView routerView = new RouterView(mockImage);
-        PCView pcView = new PCView(mockImage);
+        RouterView routerView = new RouterView(UUID.randomUUID(),mockImage);
+        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
         masterController.addDevice(routerView);
         masterController.addDevice(pcView);
         RouterModel routerModel = storage.getRouterModel(routerView.getUuid());
@@ -60,8 +60,8 @@ public class MasterControllerTest {
         MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
         Image mockImage = Mockito.mock(Image.class);
 
-        RouterView routerView = new RouterView(mockImage);
-        PCView pcView = new PCView(mockImage);
+        RouterView routerView = new RouterView(UUID.randomUUID(),mockImage);
+        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
         masterController.addDevice(routerView);
         masterController.addDevice(pcView);
         RouterModel routerModel = storage.getRouterModel(routerView.getUuid());

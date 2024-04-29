@@ -27,7 +27,7 @@ public class JsonExporter {
                 ))
                 .collect(Collectors.toList()),
                 connections,
-                new AutoNameGeneratorDTO(AutoNameGenerator.getRouterNameCounter(), AutoNameGenerator.getSwitchNameCounter(), AutoNameGenerator.getRouterInterfaceNameCounter(), AutoNameGenerator.getPcNameCounter()));
+                new AutoNameGeneratorDTO(AutoNameGenerator.getInstance().getRouterNameCounter(), AutoNameGenerator.getInstance().getSwitchNameCounter(), AutoNameGenerator.getInstance().getRouterInterfaceNameCounter(), AutoNameGenerator.getInstance().getPcNameCounter()));
 
         Files.write(Paths.get(file.toURI()), mapper.writeValueAsString(exportData).getBytes());
     }

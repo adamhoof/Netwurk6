@@ -62,16 +62,16 @@ public class SimulationControllerTest {
         MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
 
         UUID pcUuid = UUID.randomUUID();
-        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
         UUID pcUuid2 = UUID.randomUUID();
-        PCModel pc1 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc1 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.getInstance().generatePcName());
 
         UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw0 = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        SwitchModel sw0 = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
         UUID sw2Uuid = UUID.randomUUID();
-        SwitchModel sw1 = new SwitchModel(sw2Uuid, new MACAddress(sw2Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        SwitchModel sw1 = new SwitchModel(sw2Uuid, new MACAddress(sw2Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
         masterController.addDevice(pc0);
         masterController.addDevice(pc1);
@@ -123,16 +123,16 @@ public class SimulationControllerTest {
         MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
 
         UUID pcUuid = UUID.randomUUID();
-        PCModel pcModel = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pcModel = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
         UUID pcUuid2 = UUID.randomUUID();
-        PCModel pcModel2 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.generatePcName());
+        PCModel pcModel2 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.getInstance().generatePcName());
 
         UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        SwitchModel sw = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
         UUID routerUuid = UUID.randomUUID();
-        RouterModel router = new RouterModel(routerUuid, new MACAddress(routerUuid.toString()), AutoNameGenerator.generateRouterName());
+        RouterModel router = new RouterModel(routerUuid, new MACAddress(routerUuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
         masterController.addDevice(pcModel);
         masterController.addDevice(pcModel);
@@ -207,13 +207,13 @@ public class SimulationControllerTest {
 
         // Setup devices
         UUID pc0Uuid = UUID.randomUUID();
-        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
         UUID pc1Uuid = UUID.randomUUID();
-        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
         UUID sw0Uuid = UUID.randomUUID();
-        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
         UUID r0Uuid = UUID.randomUUID();
-        RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.generateRouterName());
+        RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
         // Add devices to master controller and connect them
         masterController.addDevice(pc0);
@@ -277,13 +277,13 @@ public class SimulationControllerTest {
 
         // Setup devices
         UUID pc0Uuid = UUID.randomUUID();
-        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
         UUID pc1Uuid = UUID.randomUUID();
-        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.generatePcName());
+        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
         UUID sw0Uuid = UUID.randomUUID();
-        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.generateSwitchName());
+        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
         UUID r0Uuid = UUID.randomUUID();
-        RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.generateRouterName());
+        RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
         // Add devices to master controller and connect them
         masterController.addDevice(pc0);

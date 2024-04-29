@@ -113,7 +113,7 @@ public class RouterModel extends NetworkDeviceModel {
 
         IPAddress interfaceIp = lanNetwork.getNextAvailableIpAddress();
         RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), interfaceIp, new MACAddress(UUID.randomUUID().toString()), this, lanNetwork);
-        routerInterface.setName(AutoNameGenerator.generateRouterInterfaceName());
+        routerInterface.setName(AutoNameGenerator.getInstance().generateRouterInterfaceName());
         routerInterfaces.put(lanNetwork, routerInterface);
 
         return lanNetwork;

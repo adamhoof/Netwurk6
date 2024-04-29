@@ -1,59 +1,81 @@
 package common;
 
+import com.google.common.eventbus.Subscribe;
+
 public class AutoNameGenerator {
-    private AutoNameGenerator(){}
+    private static final AutoNameGenerator instance = new AutoNameGenerator();
 
-    private static int routerNameCounter = 0;
-    private static int pcNameCounter = 0;
+    private int routerNameCounter = 0;
+    private int pcNameCounter = 0;
+    private int switchNameCounter = 0;
+    private int routerInterfaceNameCounter = 0;
 
-    private static int switchNameCounter = 0;
-    private static int routerInterfaceNameCounter = 0;
+    private AutoNameGenerator() {
+    }
 
-    public static String generateRouterName() {
+    public static AutoNameGenerator getInstance() {
+        return instance;
+    }
+
+    public static void registerListener(){
+        GlobalEventBus.register(getInstance());
+    }
+
+    public String generateRouterName() {
         return "Router" + routerNameCounter++;
     }
 
-    public static String generatePcName() {
+    public String generatePcName() {
         return "PC" + pcNameCounter++;
     }
 
-    public static String generateSwitchName() {
+    public String generateSwitchName() {
         return "Switch" + switchNameCounter++;
     }
 
-    public static String generateRouterInterfaceName() {
+    public String generateRouterInterfaceName() {
         return "RouterInterface" + routerInterfaceNameCounter++;
     }
 
-    public static void setRouterNameCounter(int routerNameCounter){
-        AutoNameGenerator.routerNameCounter=  routerNameCounter;
+    public void setRouterNameCounter(int value) {
+        this.routerNameCounter = value;
     }
 
-    public static void setPcNameCounter(int pcNameCounter) {
-        AutoNameGenerator.pcNameCounter = pcNameCounter;
+    public void setPcNameCounter(int value) {
+        this.pcNameCounter = value;
     }
 
-    public static void setSwitchNameCounter(int switchNameCounter) {
-        AutoNameGenerator.switchNameCounter = switchNameCounter;
+    public void setSwitchNameCounter(int value) {
+        this.switchNameCounter = value;
     }
 
-    public static void setRouterInterfaceNameCounter(int routerInterfaceNameCounter) {
-        AutoNameGenerator.routerInterfaceNameCounter = routerInterfaceNameCounter;
+    public void setRouterInterfaceNameCounter(int value) {
+        this.routerInterfaceNameCounter = value;
     }
 
-    public static int getRouterNameCounter() {
+    public int getRouterNameCounter() {
         return routerNameCounter;
     }
 
-    public static int getPcNameCounter() {
+    public int getPcNameCounter() {
         return pcNameCounter;
     }
 
-    public static int getSwitchNameCounter() {
+    public int getSwitchNameCounter() {
         return switchNameCounter;
     }
 
-    public static int getRouterInterfaceNameCounter() {
+    public int getRouterInterfaceNameCounter() {
         return routerInterfaceNameCounter;
+    }
+
+    @Subscribe
+    public void handleDecrementNameCounterRequestEvent(DecrementNameCounterRequestEvent event) {
+        switch (event.type()) {
+            case ROUTER -> setRouterNameCounter(getRouterNameCounter() - 1);
+            case ROUTER_INTERFACE -> setRouterInterfaceNameCounter(getRouterInterfaceNameCounter() - 1);
+            case SWITCH -> setSwitchNameCounter(getSwitchNameCounter() - 1);
+            case PC -> setPcNameCounter(getPcNameCounter() - 1);
+        }
     }
 }

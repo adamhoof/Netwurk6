@@ -11,8 +11,8 @@ import java.util.UUID;
 public class SwitchModelTest {
     @Test
     public void learnMacAddress() {
-        SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.generateSwitchName());
-        PCModel toRemove = new PCModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.generatePcName());
+        SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.getInstance().generateSwitchName());
+        PCModel toRemove = new PCModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.getInstance().generatePcName());
 
         switchModel.addConnection(toRemove);
         SwitchConnection switchConnection = switchModel.getSwitchConnections().iterator().next();
@@ -24,8 +24,8 @@ public class SwitchModelTest {
 
     @Test
     public void forgetMacAddress() {
-        SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.generateSwitchName());
-        PCModel toRemove = new PCModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.generatePcName());
+        SwitchModel switchModel = new SwitchModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.getInstance().generateSwitchName());
+        PCModel toRemove = new PCModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString()), AutoNameGenerator.getInstance().generatePcName());
 
         switchModel.addConnection(toRemove);
         SwitchConnection switchConnection = switchModel.getSwitchConnections().iterator().next();
