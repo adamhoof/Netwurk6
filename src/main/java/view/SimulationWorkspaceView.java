@@ -102,8 +102,8 @@ public class SimulationWorkspaceView {
         Button pauseSimulationToolBarButton = createPauseSimulationButton(new ImageView(new Image("pause_icon.png")));
 
         MenuBar menuBar = new MenuBar();
-        FileMenu fileMenu = new FileMenu("File", networkDeviceViews, connectionLines);
-        menuBar.getMenus().add(fileMenu);
+        Menu menu = new Menu("Options", networkDeviceViews, connectionLines);
+        menuBar.getMenus().add(menu);
         AnchorPane.setTopAnchor(menuBar, 0.0);
         AnchorPane.setLeftAnchor(menuBar, 0.0);
         AnchorPane.setRightAnchor(menuBar, 0.0);
@@ -353,7 +353,7 @@ public class SimulationWorkspaceView {
                 networkDeviceView.setLayoutY(newY);
 
                 for (ConnectionLine line : networkDeviceView.getConnections()) {
-                    updateLinePosition(networkDeviceView, line);
+                    updateLabelPositions(line);
                 }
             }
         });
@@ -426,11 +426,9 @@ public class SimulationWorkspaceView {
 
     /**
      * Updates the position of a connection line based on the movement of network devices.
-     *
-     * @param networkDeviceView the network device view that is being moved
      * @param connectionLine    the connection line to be updated
      */
-    private void updateLinePosition(NetworkDeviceView networkDeviceView, ConnectionLine connectionLine) {
+    private void updateLabelPositions(ConnectionLine connectionLine) {
         double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
         double centerY = (connectionLine.getStartY() + connectionLine.getEndY()) / 2;
 

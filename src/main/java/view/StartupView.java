@@ -1,6 +1,7 @@
 package view;
 
 import common.AutoNameGenerator;
+import common.GlobalEventBus;
 import controller.MasterController;
 import controller.NetworksController;
 import controller.SimulationController;
@@ -23,16 +24,19 @@ public class StartupView {
 
     private final Stage stage;
     private Scene scene;
+    VBox menu;
 
     public StartupView(Stage stage) {
         this.stage = stage;
+        GlobalEventBus.register(this);
         initializeView();
     }
 
     private void initializeView() {
-        VBox menu = new VBox();
+        menu = new VBox();
         menu.setSpacing(20);
         menu.setAlignment(Pos.CENTER);
+        menu.setMinSize(200, 200);
 
         Button newButton = new Button("New");
         newButton.setPrefSize(200, 40);
@@ -44,7 +48,6 @@ public class StartupView {
             MasterController masterController = new MasterController(simulationWorkspaceView, networkDeviceStorage, networksController, simulationController);
 
             simulationWorkspaceView.display();
-
         });
 
         Button loadButton = new Button("Load");
@@ -54,7 +57,7 @@ public class StartupView {
             FileChooser.ExtensionFilter jsonFilter = new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json");
             fileChooser.getExtensionFilters().add(jsonFilter);
 
-            File selectedFile = fileChooser.showOpenDialog(null); // Opens a file selection dialog
+            File selectedFile = fileChooser.showOpenDialog(null);
 
             if (selectedFile != null) {
                 Platform.runLater(() -> {

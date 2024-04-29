@@ -1,8 +1,8 @@
 package view;
 
+import common.GlobalEventBus;
 import io.ConnectionLineDTO;
 import io.JsonExporter;
-import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -13,20 +13,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class FileMenu extends Menu {
+public class Menu extends javafx.scene.control.Menu {
     ArrayList<NetworkDeviceView> deviceViews;
     ArrayList<ConnectionLine> connectionLines;
 
-    public FileMenu(String name, ArrayList<NetworkDeviceView> deviceViews, ArrayList<ConnectionLine> connectionLines) {
+    public Menu(String name, ArrayList<NetworkDeviceView> deviceViews, ArrayList<ConnectionLine> connectionLines) {
         super(name);
         this.deviceViews = deviceViews;
         this.connectionLines = connectionLines;
+        GlobalEventBus.register(this);
+
         MenuItem save = new MenuItem("Save");
         save.setOnAction(clickEvent -> saveEventHandler(save));
 
-        MenuItem load = new MenuItem("Load");
-
-        this.getItems().addAll(save, load);
+        this.getItems().addAll(save);
     }
 
     private void saveEventHandler(MenuItem save) {

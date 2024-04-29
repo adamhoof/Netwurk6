@@ -40,7 +40,6 @@ public class MasterController {
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
         this.simulationController = simulationController;
-        simulationController.registerObserver(this);
     }
 
     /**
@@ -56,7 +55,7 @@ public class MasterController {
      */
     @Subscribe
     public void handleUpdateLabels(UpdateLabelsEvent event) {
-        PCModel pcModel = event.getPcModel();
+        PCModel pcModel = event.pcModel();
 
         NetworkDevice networkDevice = pcModel.getConnection();
         if (networkDevice instanceof RouterInterface routerInterface) {
@@ -73,7 +72,6 @@ public class MasterController {
         } else {
             connectionLine.getEndLabel().setText("." + pcModel.getIpAddress().getOctets()[3]);
         }
-
     }
 
     /**
@@ -199,9 +197,9 @@ public class MasterController {
 
             labels.put("Start", "." + routerInterface.getIpAddress().getOctets()[3]);
             labels.put("Middle", routerInterface.getNetwork().getNetworkIpAddress().toString());
-        } else if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.SWITCH){
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.SWITCH) {
             labels.put("Start", "no_ip");
-        } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.PC){
+        } else if (first.getNetworkDeviceType() == NetworkDeviceType.SWITCH && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
             labels.put("End", "no_ip");
         }
         return labels;

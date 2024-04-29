@@ -1,5 +1,9 @@
 package controller;
 
+import com.google.common.eventbus.Subscribe;
+import common.ExitRequestEvent;
+import common.GlobalEventBus;
+import common.ReadyToExitEvent;
 import common.UpdateLabelsEvent;
 import javafx.animation.PathTransition;
 import javafx.application.Platform;
@@ -18,17 +22,15 @@ import view.SimulationWorkspaceView;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.eventbus.EventBus;
 
 /**
  * Controls the simulation of network communications, handling animations, and packet transmissions.
  */
 public class SimulationController {
-    private final EventBus eventBus = new EventBus();
     private final ScheduledExecutorService threadPool;
     private final BlockingQueue<Pair<NetworkConnection, Frame>> outboundQueue;
     private final NetworkDeviceStorage storage;
@@ -55,14 +57,26 @@ public class SimulationController {
         this.storage = storage;
         this.networksController = networksController;
         this.simulationWorkspaceView = simulationWorkspaceView;
-    }
-
-    public void registerObserver(Object observer) {
-        eventBus.register(observer);
+        GlobalEventBus.register(this);
     }
 
     public void updateLabelsRequest(PCModel pcModel) {
-        eventBus.post(new UpdateLabelsEvent(pcModel)); // Publish the event with PCModel
+        GlobalEventBus.post(new UpdateLabelsEvent(pcModel));
+    }
+
+    @Subscribe
+    public void handleExitRequestEvent(ExitRequestEvent event) {
+        try {
+            threadPool.shutdown();
+            if (!threadPool.awaitTermination(800, TimeUnit.MILLISECONDS)) {
+                List<Runnable> droppedTasks = threadPool.shutdownNow();
+                System.out.println("Shutdown forced, dropping tasks: " + droppedTasks.size());
+            }
+        } catch (InterruptedException e) {
+            threadPool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        GlobalEventBus.post(new ReadyToExitEvent());
     }
 
     /**
