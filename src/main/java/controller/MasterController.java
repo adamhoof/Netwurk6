@@ -1,10 +1,7 @@
 package controller;
 
 import com.google.common.eventbus.Subscribe;
-import common.AutoNameGenerator;
-import common.NetworkDevice;
-import common.NetworkDeviceType;
-import common.UpdateLabelsEvent;
+import common.*;
 import javafx.scene.paint.Color;
 import model.*;
 import view.ConnectionLine;
@@ -40,6 +37,7 @@ public class MasterController {
         this.deviceStorage = deviceStorage;
         this.networksController = networksController;
         this.simulationController = simulationController;
+        GlobalEventBus.register(this);
     }
 
     /**
