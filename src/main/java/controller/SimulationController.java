@@ -20,10 +20,7 @@ import org.apache.logging.log4j.Logger;
 import view.ConnectionLine;
 import view.SimulationWorkspaceView;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -174,7 +171,7 @@ public class SimulationController {
         }
 
         PCModel recipientPcModel = initiatorPcModel;
-        while (initiatorPcModel == recipientPcModel) {
+        while (initiatorPcModel == recipientPcModel || recipientPcModel.getConnection() == null || recipientPcModel.isConfigurationInProgress()) {
             randomIndex = random.nextInt(pcModels.size());
             recipientPcModel = pcModels.get(randomIndex);
         }
@@ -182,6 +179,14 @@ public class SimulationController {
         PCModel finalInitiatorPcModel = initiatorPcModel;
         PCModel finalRecipientPcModel = recipientPcModel;
         initiateCommunication(finalInitiatorPcModel, finalRecipientPcModel);
+    }
+
+    public static RouterInterface findInterfaceByExactIpAddress(List<RouterInterface> interfaces, IPAddress targetIp) {
+        Optional<RouterInterface> result = interfaces.stream()
+                .filter(routerInterface -> routerInterface.getIpAddress() == targetIp)  // Check for reference equality
+                .findFirst();
+
+        return result.orElse(null);
     }
 
     /**
@@ -217,7 +222,28 @@ public class SimulationController {
             return;
         }
 
+        RouterInterface initiatorRouterInterface = findInterfaceByExactIpAddress(storage.getRouterInterfaces(), initiator.getDefaultGateway());
+        RouterInterface recipientRouterInterface = findInterfaceByExactIpAddress(storage.getRouterInterfaces(), recipient.getDefaultGateway());
+
+        if (initiatorRouterInterface == null){
+            System.out.println("initiator interface null");
+            return;
+        }
+        if (recipientRouterInterface == null){
+            System.out.println("recipient interface null");
+            return;
+        }
+
+        RouterModel initiatorRouterInterfacesRouter = initiatorRouterInterface.getInterfacesRouter();
+        RouterModel recipientRouterInterfacesRouter = recipientRouterInterface.getInterfacesRouter();
+
         if (networksController.isSameNetwork(initiator, recipient)) {
+            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter){
+                //ip address of networks is the same, but they are somewhere completely different (2 distant LANs can have same network IPs)
+                simulationWorkspaceView.printToLogWindow(String.format("PC WAN communication not implemented (%s -> %s)\nPicking different one\n", initiator, recipient), Color.RED);
+                pickRandomLanCommunication();
+                return;
+            }
             logger.warn("Initiator {}, ip {} and recipient {}, ip {} ARE on the same network", initiator, initiator.getIpAddress(), recipient, recipient.getIpAddress());
             MACAddress recipientMac = initiator.queryArp(recipient.getIpAddress());
 
@@ -231,6 +257,13 @@ public class SimulationController {
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
+            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter){
+                //this indicates they are on a completely different network, not just a different subnet
+                simulationWorkspaceView.printToLogWindow(String.format("PC WAN communication not implemented (%s -> %s)\nPicking different one\n", initiator, recipient), Color.RED);
+                pickRandomLanCommunication();
+                return;
+            }
+
             logger.warn("Initiator {}, ip {} and recipient {}, ip {} AREN'T on the same network", initiator, initiator.getIpAddress(), recipient, recipient.getIpAddress());
             MACAddress defaultGatewayMac = initiator.queryArp(initiator.getDefaultGateway());
             if (defaultGatewayMac != null) {

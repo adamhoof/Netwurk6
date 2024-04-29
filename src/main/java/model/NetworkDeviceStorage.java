@@ -1,5 +1,9 @@
 package model;
 
+import com.google.common.eventbus.Subscribe;
+import common.GlobalEventBus;
+import common.RouterInterfaceCreatedEvent;
+
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -8,9 +12,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * including routers and PCs, in a network simulation environment.
  */
 public class NetworkDeviceStorage {
+    public NetworkDeviceStorage(){
+        GlobalEventBus.register(this);
+    }
     Map<UUID, NetworkDeviceModel> networkDeviceModels = new HashMap<>();
     ArrayList<RouterModel> routerModels = new ArrayList<>();
     List<PCModel> pcModels = new CopyOnWriteArrayList<>();
+    ArrayList<RouterInterface> routerInterfaces = new ArrayList<>();
 
     /**
      * Adds a generic network device model to the storage.
@@ -39,6 +47,19 @@ public class NetworkDeviceStorage {
     public void addPc(PCModel pcModel) {
         networkDeviceModels.put(pcModel.getUuid(), pcModel);
         pcModels.add(pcModel);
+    }
+
+    @Subscribe
+    public void handleRouterInterfaceCreatedEvent(RouterInterfaceCreatedEvent event){
+        addRouterInterface(event.routerInterface());
+    }
+
+    public void addRouterInterface(RouterInterface routerInterface) {
+        routerInterfaces.add(routerInterface);
+    }
+
+    public List<RouterInterface> getRouterInterfaces(){
+        return routerInterfaces;
     }
 
     /**

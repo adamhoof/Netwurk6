@@ -38,10 +38,6 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
         this.getChildren().addAll(imageView, this.name);
     }
 
-    /*public NetworkDeviceView(NetworkDeviceViewDTO networkDeviceViewDTO){
-
-    }*/
-
     public NetworkDeviceType getNetworkDeviceType() {
         return networkDeviceType;
     }

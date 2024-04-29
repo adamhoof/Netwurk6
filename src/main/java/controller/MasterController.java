@@ -85,6 +85,7 @@ public class MasterController {
                 LanNetwork network = routerModel.createLanNetwork();
                 IPAddress routerIpAddress = networksController.reserveIpAddressInNetwork(network);
                 RouterInterface routerInterface = new RouterInterface(UUID.randomUUID(), routerIpAddress, new MACAddress(UUID.randomUUID().toString()), routerModel, network);
+                deviceStorage.addRouterInterface(routerInterface);
                 routerInterface.setName(AutoNameGenerator.getInstance().generateRouterInterfaceName());
                 routerModel.addRouterInterface(routerInterface, network);
                 routerModel.appendRoutingTable(new RouteEntry(network, routerIpAddress, 0));
@@ -136,6 +137,8 @@ public class MasterController {
 
         if (firstModel instanceof RouterModel firstRouter && secondModel instanceof RouterModel secondRouter) {
             networksController.createWanLink(firstRouter, secondRouter);
+            deviceStorage.addRouterInterface(firstRouter.getRouterInterfaces().lastEntry().getValue());
+            deviceStorage.addRouterInterface(secondRouter.getRouterInterfaces().lastEntry().getValue());
             return true;
         }
         //For now, RouterModel handles the connection for the second device, so we need to return after adding the second model

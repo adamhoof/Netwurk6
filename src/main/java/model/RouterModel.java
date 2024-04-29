@@ -1,7 +1,9 @@
 package model;
 
 import common.AutoNameGenerator;
+import common.GlobalEventBus;
 import common.NetworkDeviceType;
+import common.RouterInterfaceCreatedEvent;
 
 import java.util.*;
 
@@ -28,6 +30,7 @@ public class RouterModel extends NetworkDeviceModel {
         super(uuid, macAddress, NetworkDeviceType.ROUTER);
         this.routingTable = new RoutingTable();
         this.arpCache = new ArpCache();
+        GlobalEventBus.register(this);
     }
 
     /**
@@ -211,17 +214,24 @@ public class RouterModel extends NetworkDeviceModel {
      */
     @Override
     public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
-        directConnections.add(networkDeviceModel);
         if (networkDeviceModel instanceof PCModel pcModel) {
             RouterInterface routerInterface = getDirectConnectionLanInterface();
             routerInterface.addConnection(pcModel);
-            return pcModel.addConnection(routerInterface);
+            boolean connectionSuccessful = pcModel.addConnection(routerInterface);
+            if (!connectionSuccessful){
+                return false;
+            }
         } else if (networkDeviceModel instanceof SwitchModel switchModel) {
             LanNetwork lanNetwork = createLanNetwork();
             RouterInterface routerInterface = getNetworksRouterInterface(lanNetwork);
+            boolean connectionSuccessful = switchModel.addConnection(routerInterface);
+            if (!connectionSuccessful){
+                return false;
+            }
             routerInterface.addConnection(switchModel);
-            return switchModel.addConnection(routerInterface);
+            GlobalEventBus.post(new RouterInterfaceCreatedEvent(routerInterface));
         }
+        directConnections.add(networkDeviceModel);
         return true;
     }
 
