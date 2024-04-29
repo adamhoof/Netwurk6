@@ -21,13 +21,13 @@ public class SimulationControllerTest {
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         SimulationController simulationController = new SimulationController(Mockito.mock(SimulationWorkspaceView.class), storage, networksController);
         UUID pcUuid = UUID.randomUUID();
-        PCModel pcModel = new PCModel(pcUuid, new MACAddress("PC1_MAC"), "PC1");
+        PCModel pcModel = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), "PC1");
 
         UUID pcUuid2 = UUID.randomUUID();
-        PCModel pcModel2 = new PCModel(pcUuid2, new MACAddress("PC2_MAC"), "PC2");
+        PCModel pcModel2 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), "PC2");
 
         UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw1Model = new SwitchModel(sw1Uuid, new MACAddress("SW1_MAC"), "SW1");
+        SwitchModel sw1Model = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), "SW1");
 
         storage.add(pcModel);
         storage.add(pcModel2);
