@@ -12,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -127,6 +128,10 @@ public class SimulationWorkspaceView {
         initializeTooltip();
 
         scene = new Scene(simulationWorkspace, 1200, 1000);
+
+        setupKeyPressEvents();
+
+        AutoNameGenerator.registerListener();
     }
 
     /**
@@ -233,6 +238,21 @@ public class SimulationWorkspaceView {
     private void setupCursorFollowingDeviceEvents() {
         setupCursorFollowingDeviceMoveEvent();
         setupCursorFollowingDeviceClickEvent();
+    }
+
+    private void setupKeyPressEvents(){
+        setupEscKeyPressEvent();
+    }
+
+    private void setupEscKeyPressEvent(){
+        scene.setOnKeyPressed(pressEvent -> {
+            if (pressEvent.getCode() == KeyCode.ESCAPE) {
+                if (cursorFollowingDeviceHandler.isFollowing()){
+                    removeNode(cursorFollowingDeviceHandler.get());
+                    cursorFollowingDeviceHandler.drop();
+                }
+            }
+        });
     }
 
     /**
@@ -371,9 +391,9 @@ public class SimulationWorkspaceView {
         deepCopy.setImageViewFitWidth(imageSize);
         deepCopy.setImageViewFitHeight(imageSize);
         switch (networkDeviceView.getNetworkDeviceType()) {
-            case ROUTER -> deepCopy.setName(AutoNameGenerator.generateRouterName());
-            case SWITCH -> deepCopy.setName(AutoNameGenerator.generateSwitchName());
-            case PC -> deepCopy.setName(AutoNameGenerator.generatePcName());
+            case ROUTER -> deepCopy.setName(AutoNameGenerator.getInstance().generateRouterName());
+            case SWITCH -> deepCopy.setName(AutoNameGenerator.getInstance().generateSwitchName());
+            case PC -> deepCopy.setName(AutoNameGenerator.getInstance().generatePcName());
         }
         cursorFollowingDeviceHandler.set(deepCopy);
     }

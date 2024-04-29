@@ -1,5 +1,8 @@
 package view;
 
+import common.DecrementNameCounterRequestEvent;
+import common.GlobalEventBus;
+
 /**
  * Handles the functionality for a cursor-following network device within the simulation.
  * Allows for dynamic interaction with network devices as they follow the cursor before placement.
@@ -8,6 +11,7 @@ public class CursorFollowingNetworkDeviceHandler {
     NetworkDeviceView cursorFollowingNetworkDevice;
 
     public CursorFollowingNetworkDeviceHandler() {
+        GlobalEventBus.register(this);
     }
 
     public NetworkDeviceView get() {
@@ -24,6 +28,11 @@ public class CursorFollowingNetworkDeviceHandler {
 
     public void place() {
         cursorFollowingNetworkDevice.setOpacity(1.0);
+        cursorFollowingNetworkDevice = null;
+    }
+
+    public void drop() {
+        GlobalEventBus.post(new DecrementNameCounterRequestEvent(cursorFollowingNetworkDevice.getNetworkDeviceType()));
         cursorFollowingNetworkDevice = null;
     }
 }
