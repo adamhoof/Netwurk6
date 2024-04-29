@@ -137,6 +137,10 @@ public class SimulationController {
      * Periodically initiates RIP protocol communications between routers to update routing tables.
      */
     private void startRip() {
+        if (storage.getRouterModels().size() < 2) {
+            return;
+        }
+        simulationWorkspaceView.printToLogWindow("Starting RIP\n", Color.DARKCYAN);
         for (RouterModel router : storage.getRouterModels()) {
             for (RouterModel connectedRouter : networksController.getRoutersRipConnections(router)) {
                 Network sharedNetwork = networksController.getSharedNetwork(router, connectedRouter);
@@ -225,11 +229,11 @@ public class SimulationController {
         RouterInterface initiatorRouterInterface = findInterfaceByExactIpAddress(storage.getRouterInterfaces(), initiator.getDefaultGateway());
         RouterInterface recipientRouterInterface = findInterfaceByExactIpAddress(storage.getRouterInterfaces(), recipient.getDefaultGateway());
 
-        if (initiatorRouterInterface == null){
+        if (initiatorRouterInterface == null) {
             System.out.println("initiator interface null");
             return;
         }
-        if (recipientRouterInterface == null){
+        if (recipientRouterInterface == null) {
             System.out.println("recipient interface null");
             return;
         }
@@ -238,7 +242,7 @@ public class SimulationController {
         RouterModel recipientRouterInterfacesRouter = recipientRouterInterface.getInterfacesRouter();
 
         if (networksController.isSameNetwork(initiator, recipient)) {
-            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter){
+            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter) {
                 //ip address of networks is the same, but they are somewhere completely different (2 distant LANs can have same network IPs)
                 simulationWorkspaceView.printToLogWindow(String.format("PC WAN communication not implemented (%s -> %s)\nPicking different one\n", initiator, recipient), Color.RED);
                 pickRandomLanCommunication();
@@ -257,7 +261,7 @@ public class SimulationController {
                 sendArpRequest(new NetworkConnection(initiator, next), initiator.getMacAddress(), initiator.getIpAddress(), recipient.getIpAddress());
             }
         } else {
-            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter){
+            if (initiatorRouterInterfacesRouter != recipientRouterInterfacesRouter) {
                 //this indicates they are on a completely different network, not just a different subnet
                 simulationWorkspaceView.printToLogWindow(String.format("PC WAN communication not implemented (%s -> %s)\nPicking different one\n", initiator, recipient), Color.RED);
                 pickRandomLanCommunication();
@@ -694,6 +698,8 @@ public class SimulationController {
             case "StringMessage":
                 rectangle.setFill(Color.GREEN);
                 break;
+            case "RipMessage":
+                rectangle.setFill(Color.DARKCYAN);
             default:
                 rectangle.setFill(Color.GRAY);
                 break;
