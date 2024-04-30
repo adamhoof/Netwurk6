@@ -1,19 +1,18 @@
+import common.AutoNameGenerator;
 import controller.MasterController;
 import controller.NetworksController;
 import controller.SimulationController;
-import javafx.scene.image.Image;
 import model.MACAddress;
 import model.NetworkDeviceStorage;
 import model.PCModel;
 import model.RouterModel;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import view.PCView;
-import view.RouterView;
 import view.SimulationWorkspaceView;
 
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MasterControllerTest {
 
@@ -22,35 +21,40 @@ public class MasterControllerTest {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         MasterController masterController = new MasterController(mockView, storage, new NetworksController(), Mockito.mock(SimulationController.class));
-        Image mockImage = Mockito.mock(Image.class);
 
-        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
-        masterController.addDevice(pcView);
-        PCModel pcModel = storage.getPcModel(pcView.getUuid());
+        UUID pc0Uuid = UUID.randomUUID();
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()));
 
-        boolean result = masterController.addConnection(new RouterModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString())), pcModel);
-        Assertions.assertFalse(result);
-        Assertions.assertNull(pcModel.getConnection());
+        masterController.addDevice(pc0);
+        pc0 = storage.getPcModel(pc0.getUuid());
+
+        boolean result = masterController.addConnection(new RouterModel(UUID.randomUUID(), new MACAddress(UUID.randomUUID().toString())), pc0);
+        assertFalse(result);
+        assertNull(pc0.getConnection());
     }
 
     @Test
     public void addConnection_bothExistAndAcceptConnection_returnTrueConnectionNotNull() {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
-        Image mockImage = Mockito.mock(Image.class);
+        MasterController masterController = new MasterController(mockView, storage, new NetworksController(), Mockito.mock(SimulationController.class));
 
-        RouterView routerView = new RouterView(UUID.randomUUID(),mockImage);
-        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
-        masterController.addDevice(routerView);
-        masterController.addDevice(pcView);
-        RouterModel routerModel = storage.getRouterModel(routerView.getUuid());
-        PCModel pcModel = storage.getPcModel(pcView.getUuid());
+        UUID routerUuid = UUID.randomUUID();
+        RouterModel router = new RouterModel(UUID.randomUUID(), new MACAddress(routerUuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
-        boolean result = masterController.addConnection(routerModel, pcModel);
+        UUID pc0Uuid = UUID.randomUUID();
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
-        Assertions.assertTrue(result);
-        Assertions.assertNotNull(pcModel.getConnection());
+        masterController.addDevice(router);
+        masterController.addDevice(pc0);
+
+        router = storage.getRouterModel(router.getUuid());
+        pc0 = storage.getPcModel(pc0.getUuid());
+
+        boolean result = masterController.addConnection(router, pc0);
+
+        assertTrue(result);
+        assertNotNull(pc0.getConnection());
     }
 
     @Test
@@ -58,19 +62,23 @@ public class MasterControllerTest {
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         MasterController masterController = new MasterController(mockView, storage, Mockito.mock(NetworksController.class), Mockito.mock(SimulationController.class));
-        Image mockImage = Mockito.mock(Image.class);
 
-        RouterView routerView = new RouterView(UUID.randomUUID(),mockImage);
-        PCView pcView = new PCView(UUID.randomUUID(),mockImage);
-        masterController.addDevice(routerView);
-        masterController.addDevice(pcView);
-        RouterModel routerModel = storage.getRouterModel(routerView.getUuid());
-        PCModel pcModel = storage.getPcModel(pcView.getUuid());
+        UUID routerUuid = UUID.randomUUID();
+        RouterModel router = new RouterModel(routerUuid, new MACAddress(routerUuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
-        masterController.addConnection(routerModel, pcModel);
-        boolean result = masterController.addConnection(routerModel, pcModel);
+        UUID pcUuid = UUID.randomUUID();
+        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
-        Assertions.assertFalse(result);
-        Assertions.assertNotNull(pcModel.getConnection());
+        masterController.addDevice(pc0);
+        masterController.addDevice(router);
+
+        router = storage.getRouterModel(router.getUuid());
+        pc0 = storage.getPcModel(pc0.getUuid());
+
+        masterController.addConnection(router, pc0);
+        boolean result = masterController.addConnection(router, pc0);
+
+        assertFalse(result);
+        assertEquals(router.getDirectConnectionLanInterface(), pc0.getConnection());
     }
 }
