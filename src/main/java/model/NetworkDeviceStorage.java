@@ -101,6 +101,10 @@ public class NetworkDeviceStorage {
         return (PCModel) networkDeviceModels.getOrDefault(uuid, null);
     }
 
+    public SwitchModel getSwitchModel(UUID uuid){
+        return (SwitchModel) networkDeviceModels.getOrDefault(uuid, null);
+    }
+
     /**
      * Retrieves a network device model by its MAC address.
      *

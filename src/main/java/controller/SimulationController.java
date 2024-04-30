@@ -61,6 +61,10 @@ public class SimulationController {
         GlobalEventBus.post(new UpdateLabelsEvent(pcModel));
     }
 
+    public int queueSize(){
+        return outboundQueue.size();
+    }
+
     @Subscribe
     public void handleExitRequestEvent(ExitRequestEvent event) {
         try {

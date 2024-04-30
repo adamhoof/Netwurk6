@@ -96,4 +96,16 @@ public class PCModel extends NetworkDeviceModel {
     public MACAddress queryArp(IPAddress ipAddress) {
         return getArpCache().getMAC(ipAddress);
     }
+
+    public void setIpAddress(IPAddress ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setSubnetMask(SubnetMask subnetMask) {
+        this.subnetMask = subnetMask;
+    }
+
+    public void setDefaultGateway(IPAddress defaultGateway) {
+        this.defaultGateway = defaultGateway;
+    }
 }
