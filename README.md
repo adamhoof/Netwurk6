@@ -8,14 +8,14 @@ SpudrNet6 je intuitivní nástroj pro simulaci síťové komunikace, který je n
 
 - **GUI**
   - **Umístění prvků**: Simulace umožňuje na pracovní plochu aplikace umístit síťové prvky, jmenovitě PC, routery a switche, pomocí "PC", "Router, "Switch" tlačítek.
-  - **Import a export**: Konfiguraci sítě lze exportovat pomocí menu "Options"->"Save" a poté znovu ji zpátky importovat z hlavní stránky tlačítkem "Load" (ukázkové konfigurace jsou ve složce main/resources). 
+  - **Import a export**: Konfiguraci sítě lze exportovat pomocí menu "Options"->"Save" a poté znovu ji zpátky importovat z hlavní stránky tlačítkem "Load" (ukázkové konfigurace jsou ve složce main/resources.).
   - **Propojení prvků**: Vytváření spojení mezi prvky je možné kliknutím na tlačítko "Connector" a kliknutím na 2 požadované zařízení a uspořádat tak topologii sítě.
   - **Flow simulace**: Lze spustit a pozastavit simulaci tlačítky "Start" a "Pause".
   - **Vizualizace provozu**: Simulace vizualizuje pohyb packetů podél spojení, čímž indikuje aktuální tok dat v reálném čase.
   - **Log window**: Simulace obsahuje logovací okno, kde jsou vypsány právě probíhající síťové operace, či chybové hlášky (např. když se uživatel snaží propojit zařízení samo se sebou...).
 - **Tvorba sítí a subnetů**
   - **LAN**: Položením routeru se vytvoří defaultní LAN pro tento router s defaultním subnet.
-  - **Subnetting**: Připojením switche k routeru se vytvoří nový subnet, který router spravuje. Propojením PC a routeru nový subnet nevzniká, PC se přídá do zmíněného defaultního subnetu. 
+  - **Subnetting**: Připojením switche k routeru se vytvoří nový subnet, který router spravuje. Propojením PC a routeru nový subnet nevzniká, PC se přídá do zmíněného defaultního subnetu.
   - **WAN**: Při spojení dvou routerů se vytvoří WAN.
 - **Konfigurace zařízení**
   - **Router**: Router je v základu nakonfigurován (automatická správa subnetů, routovací tabulky, arp cache, rozhraní).
