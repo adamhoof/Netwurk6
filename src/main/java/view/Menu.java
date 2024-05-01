@@ -1,7 +1,8 @@
 package view;
 
+import common.AutoNameGenerator;
 import common.GlobalEventBus;
-import io.ConnectionLineDTO;
+import io.DTOConvertor;
 import io.JsonExporter;
 import javafx.scene.control.MenuItem;
 import javafx.stage.FileChooser;
@@ -10,8 +11,6 @@ import javafx.stage.Window;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 public class Menu extends javafx.scene.control.Menu {
     ArrayList<NetworkDeviceView> deviceViews;
@@ -53,17 +52,7 @@ public class Menu extends javafx.scene.control.Menu {
 
     private void exportNetworkData(File file) throws IOException {
         JsonExporter jsonExporter = new JsonExporter();
-
-        List<ConnectionLineDTO> connectionDTOs = new ArrayList<>();
-        for (ConnectionLine connectionLine : connectionLines) {
-
-            UUID startDeviceUuid = connectionLine.getStartDevice().getUuid();
-            UUID endDeviceUuid = connectionLine.getEndDevice().getUuid();
-
-            ConnectionLineDTO dto = new ConnectionLineDTO(startDeviceUuid, endDeviceUuid);
-            connectionDTOs.add(dto);
-        }
-
-        jsonExporter.exportNetworkData(deviceViews, connectionDTOs, file);
+        DTOConvertor dtoConvertor = new DTOConvertor();
+        jsonExporter.exportNetworkData(dtoConvertor.convertNetworkDeviceViewsToDTOs(deviceViews), dtoConvertor.convertConnectionLinesToDTOs(connectionLines), dtoConvertor.convertAutoNameGeneratorToDTO(AutoNameGenerator.getInstance()),file);
     }
 }

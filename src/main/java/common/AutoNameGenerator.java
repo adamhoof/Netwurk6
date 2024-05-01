@@ -37,19 +37,19 @@ public class AutoNameGenerator {
         return "RouterInterface" + routerInterfaceNameCounter++;
     }
 
-    public void setRouterNameCounter(int value) {
+    public void setRouterNextAvailableNumber(int value) {
         this.routerNameCounter = value;
     }
 
-    public void setPcNameCounter(int value) {
+    public void setPcNextAvailableNumber(int value) {
         this.pcNameCounter = value;
     }
 
-    public void setSwitchNameCounter(int value) {
+    public void setSwitchNextAvailableNumber(int value) {
         this.switchNameCounter = value;
     }
 
-    public void setRouterInterfaceNameCounter(int value) {
+    public void setRouterInterfaceNextAvailableNumber(int value) {
         this.routerInterfaceNameCounter = value;
     }
 
@@ -72,10 +72,10 @@ public class AutoNameGenerator {
     @Subscribe
     public void handleDecrementNameCounterRequestEvent(DecrementNameCounterRequestEvent event) {
         switch (event.type()) {
-            case ROUTER -> setRouterNameCounter(getRouterNameCounter() - 1);
-            case ROUTER_INTERFACE -> setRouterInterfaceNameCounter(getRouterInterfaceNameCounter() - 1);
-            case SWITCH -> setSwitchNameCounter(getSwitchNameCounter() - 1);
-            case PC -> setPcNameCounter(getPcNameCounter() - 1);
+            case ROUTER -> setRouterNextAvailableNumber(getRouterNameCounter() - 1);
+            case ROUTER_INTERFACE -> setRouterInterfaceNextAvailableNumber(getRouterInterfaceNameCounter() - 1);
+            case SWITCH -> setSwitchNextAvailableNumber(getSwitchNameCounter() - 1);
+            case PC -> setPcNextAvailableNumber(getPcNameCounter() - 1);
         }
     }
 }

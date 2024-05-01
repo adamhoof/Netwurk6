@@ -72,10 +72,10 @@ public class StartupView {
                     NetworkData networkData = jsonImporter.importNetworkData(selectedFile);
                     insertDevices(networkData.devices(), simulationWorkspaceView, masterController);
                     insertConnections(networkData, simulationWorkspaceView, masterController);
-                    AutoNameGenerator.getInstance().setRouterNameCounter(networkData.autoNameGeneratorDTO().routerNameCounter());
-                    AutoNameGenerator.getInstance().setSwitchNameCounter(networkData.autoNameGeneratorDTO().switchNameCounter());
-                    AutoNameGenerator.getInstance().setRouterInterfaceNameCounter(networkData.autoNameGeneratorDTO().routerInterfaceNameCounter());
-                    AutoNameGenerator.getInstance().setPcNameCounter(networkData.autoNameGeneratorDTO().pcNameCounter());
+                    AutoNameGenerator.getInstance().setRouterNextAvailableNumber(networkData.autoNameGeneratorDTO().routerNameCounter());
+                    AutoNameGenerator.getInstance().setSwitchNextAvailableNumber(networkData.autoNameGeneratorDTO().switchNameCounter());
+                    AutoNameGenerator.getInstance().setRouterInterfaceNextAvailableNumber(networkData.autoNameGeneratorDTO().routerInterfaceNameCounter());
+                    AutoNameGenerator.getInstance().setPcNextAvailableNumber(networkData.autoNameGeneratorDTO().pcNameCounter());
                     simulationWorkspaceView.display();
                 });
             }

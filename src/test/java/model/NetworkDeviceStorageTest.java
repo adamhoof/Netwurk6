@@ -1,7 +1,5 @@
-import model.MACAddress;
-import model.NetworkDeviceModel;
-import model.NetworkDeviceStorage;
-import model.RouterModel;
+package model;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

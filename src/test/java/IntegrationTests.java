@@ -1,13 +1,21 @@
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import common.AutoNameGenerator;
+import common.NetworkDeviceType;
 import controller.MasterController;
 import controller.NetworksController;
 import controller.SimulationController;
+import io.*;
 import javafx.util.Pair;
 import model.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import view.SimulationWorkspaceView;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class IntegrationTests {
 
     @Test
-    public void testFlow_2switchesInRow_CorrectlyChannelMacThrough() {
+    public void testCommunication_2switchesInRow_CorrectlyChannelMacThrough() {
         NetworksController networksController = new NetworksController();
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
@@ -285,17 +293,80 @@ public class IntegrationTests {
         assertSame(sw0, framePair.getKey().getEndDevice());
 
         //
-        simulationController.forwardToNextDevice(framePair.getKey(),framePair.getValue());
+        simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         assertSame(sw0, framePair.getKey().getStartDevice());
         assertSame(subnetRouterInterface, framePair.getKey().getEndDevice());
 
-        simulationController.forwardToNextDevice(framePair.getKey(),framePair.getValue());
+        simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         assertSame(defaultRouterInterface, framePair.getKey().getStartDevice());
         assertSame(pc1, framePair.getKey().getEndDevice());
 
         assertInstanceOf(StringMessage.class, framePair.getValue().getPacket().getMessage());
+    }
 
+    @Test
+    public void exportImportJsonNetworkConfiguration(@TempDir Path tempDir) {
+        JsonExporter jsonExporter = new JsonExporter();
+        JsonImporter jsonImporter = new JsonImporter();
+
+        NetworkDeviceViewDTO pcDTO = new NetworkDeviceViewDTO(UUID.randomUUID(), "PC0", 0.0, 0.0, NetworkDeviceType.PC);
+        NetworkDeviceViewDTO switchDTO = new NetworkDeviceViewDTO(UUID.randomUUID(), "SWITCH0", 0.0, 0.0, NetworkDeviceType.SWITCH);
+        NetworkDeviceViewDTO routerDTO = new NetworkDeviceViewDTO(UUID.randomUUID(), "ROUTER0", 0.0, 0.0, NetworkDeviceType.ROUTER);
+
+        ConnectionLineDTO pcSwitchConnectionLineDTO = new ConnectionLineDTO(pcDTO.uuid(), switchDTO.uuid());
+        ConnectionLineDTO switchRouterConnectionLineDTO = new ConnectionLineDTO(switchDTO.uuid(), routerDTO.uuid());
+
+        ArrayList<NetworkDeviceViewDTO> networkDeviceViewDTOs = new ArrayList<>();
+        ArrayList<ConnectionLineDTO> connectionLineDTOs = new ArrayList<>();
+
+        networkDeviceViewDTOs.add(pcDTO);
+        networkDeviceViewDTOs.add(switchDTO);
+        networkDeviceViewDTOs.add(routerDTO);
+
+        connectionLineDTOs.add(pcSwitchConnectionLineDTO);
+        connectionLineDTOs.add(switchRouterConnectionLineDTO);
+
+        AutoNameGenerator.getInstance().setPcNextAvailableNumber(1);
+        AutoNameGenerator.getInstance().setSwitchNextAvailableNumber(1);
+        AutoNameGenerator.getInstance().setRouterNextAvailableNumber(1);
+        AutoNameGenerator.getInstance().setRouterInterfaceNextAvailableNumber(3);
+
+        DTOConvertor dtoConvertor = new DTOConvertor();
+        AutoNameGeneratorDTO autoNameGeneratorDTO = dtoConvertor.convertAutoNameGeneratorToDTO(AutoNameGenerator.getInstance());
+
+        File file = tempDir.resolve("test.json").toFile();
+
+        assertDoesNotThrow(() -> jsonExporter.exportNetworkData(
+                networkDeviceViewDTOs,
+                connectionLineDTOs,
+                autoNameGeneratorDTO,
+                file)
+        );
+
+        assertTrue(file.exists());
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode actualObj = assertDoesNotThrow(() -> objectMapper.readTree(file));
+        JsonNode expectedObj = assertDoesNotThrow(() -> objectMapper.readTree(
+                "{\"devices\":[" +
+                        "{\"uuid\":\"" + pcDTO.uuid() + "\",\"name\":\"PC0\",\"x\":0.0,\"y\":0.0,\"type\":\"PC\"}," +
+                        "{\"uuid\":\"" + switchDTO.uuid() + "\",\"name\":\"SWITCH0\",\"x\":0.0,\"y\":0.0,\"type\":\"SWITCH\"}," +
+                        "{\"uuid\":\"" + routerDTO.uuid() + "\",\"name\":\"ROUTER0\",\"x\":0.0,\"y\":0.0,\"type\":\"ROUTER\"}]," +
+                        "\"connections\":[" +
+                        "{\"startDeviceId\":\"" + pcDTO.uuid() + "\",\"endDeviceId\":\"" + switchDTO.uuid() + "\"}," +
+                        "{\"startDeviceId\":\"" + switchDTO.uuid() + "\",\"endDeviceId\":\"" + routerDTO.uuid() + "\"}]," +
+                        "\"autoNameGeneratorDTO\":" +
+                        "{\"routerNameCounter\":1," +
+                        "\"switchNameCounter\":1," +
+                        "\"routerInterfaceNameCounter\":3," +
+                        "\"pcNameCounter\":1}}"));
+
+        assertEquals(expectedObj, actualObj);
+
+        NetworkData importedNetworkData = jsonImporter.importNetworkData(file);
+        assertEquals(networkDeviceViewDTOs, importedNetworkData.devices(), "The devices should match and be in the same order.");
+        assertEquals(connectionLineDTOs, importedNetworkData.connections(), "The connections should match and be in the same order.");
+        assertEquals(autoNameGeneratorDTO, importedNetworkData.autoNameGeneratorDTO(), "The auto name generator values should match.");
     }
 }

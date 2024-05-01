@@ -1,8 +1,6 @@
+package model;
+
 import common.AutoNameGenerator;
-import model.MACAddress;
-import model.PCModel;
-import model.SwitchConnection;
-import model.SwitchModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

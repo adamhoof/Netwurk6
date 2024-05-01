@@ -1,71 +1,78 @@
+package controller;
+
 import common.AutoNameGenerator;
-import controller.MasterController;
-import controller.NetworksController;
-import controller.SimulationController;
 import javafx.util.Pair;
 import model.*;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import view.SimulationWorkspaceView;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 public class SimulationControllerTest {
     @Test
-    public void forwardToNextDevice_pcToSwitchToPc_correctlyGetMacOfSrc() {
-        NetworksController networksController = new NetworksController();
-        NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        SimulationController simulationController = new SimulationController(Mockito.mock(SimulationWorkspaceView.class), storage, networksController);
-        UUID pcUuid = UUID.randomUUID();
-        PCModel pcModel = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), "PC1");
+    public void forwardToNextDevice_2pcsToSwitch() {
+        SimulationController simulationController = new SimulationController(mock(SimulationWorkspaceView.class), mock(NetworkDeviceStorage.class), mock(NetworksController.class));
+        UUID pc0Uuid = UUID.randomUUID();
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
-        UUID pcUuid2 = UUID.randomUUID();
-        PCModel pcModel2 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), "PC2");
+        UUID pc1Uuid = UUID.randomUUID();
+        PCModel pc1 = new PCModel(pc1Uuid, new MACAddress(pc1Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
         UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw1Model = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), "SW1");
+        SwitchModel sw0 = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
-        storage.add(pcModel);
-        storage.add(pcModel2);
-        storage.add(sw1Model);
+        assertTrue(pc0.addConnection(sw0));
+        assertTrue(pc1.addConnection(sw0));
 
-        pcModel.addConnection(sw1Model);
-        pcModel2.addConnection(sw1Model);
+        assertTrue(sw0.addConnection(pc0));
+        assertTrue(sw0.addConnection(pc1));
 
-        sw1Model.addConnection(pcModel);
-        sw1Model.addConnection(pcModel2);
+        Packet packet = mock(Packet.class);
 
-        Packet packet = new Packet(null, null, new StringMessage("Hello there from PC1"));
-        Packet packet2 = new Packet(null, null, new StringMessage("Hello there from P2"));
+        sw0.learnMacAddress(pc0.getMacAddress(), 0);
+        sw0.learnMacAddress(pc1.getMacAddress(), 1);
 
-        NetworkConnection networkConnection = new NetworkConnection(pcModel, pcModel.getConnection());
-        Frame frame = new Frame(pcModel.getMacAddress(), pcModel2.getMacAddress(), packet);
-        simulationController.forwardToNextDevice(networkConnection, frame);
+        //send from pc0 to pc1 via sw0
+        simulationController.sendPacket(new NetworkConnection(pc0, pc0.getConnection()), pc0.getMacAddress(), pc1.getMacAddress(), packet);
 
-        networkConnection = new NetworkConnection(pcModel2, pcModel2.getConnection());
-        frame = new Frame(pcModel2.getMacAddress(), pcModel.getMacAddress(), packet2);
-        simulationController.forwardToNextDevice(networkConnection, frame);
+        //receive frame on sw0
+        Pair<NetworkConnection, Frame> framePair = simulationController.receiveFrame();
+        assertSame(pc0, framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getEndDevice());
 
-        assertTrue(sw1Model.knowsMacAddress(pcModel.getMacAddress()) && sw1Model.knowsMacAddress(pcModel2.getMacAddress()));
+        //forward from sw0 to pc1
+        simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
+        framePair = simulationController.receiveFrame();
+        assertSame(sw0, framePair.getKey().getStartDevice());
+        assertSame(pc1, framePair.getKey().getEndDevice());
+
+        //no packets to handle should remain
+        assertEquals(0, simulationController.queueSize());
+
+        //send packet from pc1 to pc0 via sw0
+        simulationController.sendPacket(new NetworkConnection(pc1, pc1.getConnection()), pc1.getMacAddress(), pc0.getMacAddress(), packet);
+        framePair = simulationController.receiveFrame();
+        assertSame(pc1,framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getEndDevice());
+
+        //forward from sw0 to pc0
+        simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
+        framePair = simulationController.receiveFrame();
+        assertSame(sw0, framePair.getKey().getStartDevice());
+        assertSame(pc0, framePair.getKey().getEndDevice());
     }
-
-
-
-
 
     @Test
     public void testDhcpConfigurationForPcsOnDifferentSubnets() {
-        // Initialize controllers and mock view
         NetworksController networksController = new NetworksController();
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
-        SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
+        SimulationWorkspaceView mockView = mock(SimulationWorkspaceView.class);
         SimulationController simulationController = new SimulationController(mockView, storage, networksController);
         MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
 
-        // Setup devices
         UUID pc0Uuid = UUID.randomUUID();
         PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
         UUID pc1Uuid = UUID.randomUUID();
@@ -75,7 +82,6 @@ public class SimulationControllerTest {
         UUID r0Uuid = UUID.randomUUID();
         RouterModel r0 = new RouterModel(r0Uuid, new MACAddress(r0Uuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
 
-        // Add devices to master controller and connect them
         masterController.addDevice(pc0);
         masterController.addDevice(pc1);
         masterController.addDevice(sw0);
@@ -84,10 +90,9 @@ public class SimulationControllerTest {
         assertTrue(masterController.addConnection(r0, sw0));
         assertTrue(masterController.addConnection(r0, pc1));
 
-        // Refresh device instances
         pc0 = storage.getPcModel(pc0.getUuid());
         pc1 = storage.getPcModel(pc1.getUuid());
-        sw0 = (SwitchModel) storage.get(sw0.getUuid());
+        sw0 = storage.getSwitchModel(sw0.getUuid());
         r0 = storage.getRouterModel(r0.getUuid());
 
         assertEquals(2, r0.getRouterInterfaces().size());

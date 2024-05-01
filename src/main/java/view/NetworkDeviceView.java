@@ -17,8 +17,8 @@ import java.util.UUID;
  */
 public abstract class NetworkDeviceView extends StackPane implements NetworkDevice {
     private final NetworkDeviceType networkDeviceType;
-    private final ImageView imageView;
-    private final Label name;
+    private ImageView imageView;
+    private Label name;
     private final UUID uuid;
     private final List<ConnectionLine> connections = new ArrayList<>();
 
@@ -29,12 +29,16 @@ public abstract class NetworkDeviceView extends StackPane implements NetworkDevi
      * @param image             the image representing the network device
      */
     public NetworkDeviceView(UUID uuid, NetworkDeviceType networkDeviceType, Image image) {
+        this.uuid = uuid;
+        this.networkDeviceType = networkDeviceType;
+        setupStyles(image);
+    }
+
+    public void setupStyles(Image image) {
         this.imageView = new ImageView(image);
         this.name = new Label();
         this.name.setStyle("-fx-text-fill: #FF0000; -fx-font-weight: bold;");
         this.name.setLayoutY(this.getLayoutY());
-        this.networkDeviceType = networkDeviceType;
-        this.uuid = uuid;
         this.getChildren().addAll(imageView, this.name);
     }
 
