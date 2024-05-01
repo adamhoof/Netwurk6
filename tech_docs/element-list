@@ -1,0 +1,7 @@
+module:cz.cvut.fel.pjv.hofmaad
+common
+controller
+entry
+io
+model
+view
