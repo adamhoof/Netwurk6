@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"common"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"controller"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"entry"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"io"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"model"},{"m":"cz.cvut.fel.pjv.hofmaad","l":"view"}];updateSearchResults();
