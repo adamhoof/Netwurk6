@@ -1,12 +1,8 @@
 package controller;
 
 import com.google.common.eventbus.Subscribe;
-import common.ExitRequestEvent;
-import common.GlobalEventBus;
-import common.ReadyToExitEvent;
-import common.UpdateLabelsEvent;
+import common.*;
 import javafx.animation.PathTransition;
-import javafx.application.Platform;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
@@ -40,6 +36,7 @@ public class SimulationController {
     private ScheduledFuture<?> randomCommunicationTaskHandle;
     private ScheduledFuture<?> ripTaskHandle;
     private static final Logger logger = LogManager.getLogger(SimulationController.class);
+    private final ConcurrentHashMap<UUID, Pair<NetworkConnection, Frame>> awaitingCommunication = new ConcurrentHashMap<>();
 
     /**
      * Initializes the simulation controller with required dependencies.
@@ -61,7 +58,7 @@ public class SimulationController {
         GlobalEventBus.post(new UpdateLabelsEvent(pcModel));
     }
 
-    public int queueSize(){
+    public int queueSize() {
         return outboundQueue.size();
     }
 
@@ -149,10 +146,16 @@ public class SimulationController {
             for (RouterModel connectedRouter : networksController.getRoutersRipConnections(router)) {
                 Network sharedNetwork = networksController.getSharedNetwork(router, connectedRouter);
                 if (sharedNetwork != null) {
-                    sendFrameWithAnimation(
-                            new NetworkConnection(router.getNetworksRouterInterface(sharedNetwork), connectedRouter.getNetworksRouterInterface(sharedNetwork)),
+                    UUID communicationUuid = UUID.randomUUID();
+                    Pair<NetworkConnection, Frame> frameThroughNetworkConnection = new Pair<>(new NetworkConnection(router.getNetworksRouterInterface(sharedNetwork), connectedRouter.getNetworksRouterInterface(sharedNetwork)),
                             new Frame(router.getMacAddress(), connectedRouter.getMacAddress(),
                                     new Packet(router.getNetworksRouterInterface(sharedNetwork).getIpAddress(), connectedRouter.getNetworksRouterInterface(sharedNetwork).getIpAddress(), new RipMessage(router.getRoutingTable()))));
+                    awaitingCommunication.put(communicationUuid, frameThroughNetworkConnection);
+
+                    GlobalEventBus.post(new NetworkCommunicationAnimationRequestEvent(
+                            communicationUuid,
+                            transformFrameThroughNetworkConnectionToVisualForm(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue()
+                            )));
                 }
             }
         }
@@ -316,7 +319,9 @@ public class SimulationController {
                     pauseSemaphore.release();
 
                     Pair<NetworkConnection, Frame> frameThroughNetworkConnection = receiveFrame();
-                    sendFrameWithAnimation(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
+                    UUID communicationUuid = UUID.randomUUID();
+                    awaitingCommunication.put(communicationUuid, frameThroughNetworkConnection);
+                    GlobalEventBus.post(new NetworkCommunicationAnimationRequestEvent(communicationUuid, transformFrameThroughNetworkConnectionToVisualForm(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue())));
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt(); // Preserve interrupt status
@@ -324,6 +329,16 @@ public class SimulationController {
                 }
             }
         });
+    }
+
+    @Subscribe
+    public void handleAnimationFinishedEvent(NetworkCommunicationAnimationFinishedEvent event) {
+        if (!awaitingCommunication.containsKey(event.communicationUuid())) {
+            logger.warn("no such communication found");
+            return;
+        }
+        Pair<NetworkConnection, Frame> frameThroughNetworkConnection = awaitingCommunication.get(event.communicationUuid());
+        forwardToNextDevice(frameThroughNetworkConnection.getKey(), frameThroughNetworkConnection.getValue());
     }
 
     /**
@@ -596,43 +611,30 @@ public class SimulationController {
         sendPacket(networkConnection, sourceMac, dstMac, new Packet(sourceIpAddress, dstIpAddress, dhcpAckMessage));
     }
 
-    /**
-     * Sends a frame over the network with visual animations representing the packet transfer.
-     * This method is intended to be called on the JavaFX application thread.
-     *
-     * @param networkConnection The network connection through which the frame is sent.
-     * @param frame             The frame containing the packet to be sent.
-     */
-    private void sendFrameWithAnimation(NetworkConnection networkConnection, Frame frame) {
-        Platform.runLater(() -> {
-            try {
-                NetworkDeviceModel animationStartNetworkDevice = networkConnection.getStartDevice();
-                NetworkDeviceModel animationEndNetworkDevice = networkConnection.getEndDevice();
+    public Pair<PathTransition, Rectangle> transformFrameThroughNetworkConnectionToVisualForm(NetworkConnection networkConnection, Frame frame) {
+        NetworkDeviceModel animationStartNetworkDevice = networkConnection.getStartDevice();
+        NetworkDeviceModel animationEndNetworkDevice = networkConnection.getEndDevice();
 
-                if (animationStartNetworkDevice instanceof RouterInterface routerInterfaceStart) {
-                    animationStartNetworkDevice = routerInterfaceStart.getInterfacesRouter();
-                }
-                if (animationEndNetworkDevice instanceof RouterInterface routerInterfaceEnd) {
-                    animationEndNetworkDevice = routerInterfaceEnd.getInterfacesRouter();
-                }
+        if (animationStartNetworkDevice instanceof RouterInterface routerInterfaceStart) {
+            animationStartNetworkDevice = routerInterfaceStart.getInterfacesRouter();
+        }
+        if (animationEndNetworkDevice instanceof RouterInterface routerInterfaceEnd) {
+            animationEndNetworkDevice = routerInterfaceEnd.getInterfacesRouter();
+        }
 
-                Rectangle visualFrame = createVisualFrame(frame);
-                simulationWorkspaceView.addNode(visualFrame);
-                PathTransition pathTransition = preparePathTransition(visualFrame, animationStartNetworkDevice, animationEndNetworkDevice);
-                if (pathTransition == null) {
-                    logger.warn("Path transition could not be initialized.");
-                    return;
-                }
-                pathTransition.setOnFinished(event -> {
-                    simulationWorkspaceView.removeNode(visualFrame);
-                    forwardToNextDevice(networkConnection, frame);
-                });
+        if (animationStartNetworkDevice == null || animationEndNetworkDevice == null) {
+            logger.warn("Null device: start -> {}, end -> {}", animationStartNetworkDevice, animationEndNetworkDevice);
+            return null;
+        }
 
-                pathTransition.play();
-            } catch (Exception e) {
-                logger.error("an error occurred while trying to animate the frame transfer.", e);
-            }
-        });
+        Rectangle visualFrame = createVisualFrame(frame);
+        PathTransition pathTransition = preparePathTransition(visualFrame, animationStartNetworkDevice, animationEndNetworkDevice);
+        if (pathTransition == null) {
+            logger.warn("Path transition could not be initialized.");
+            return null;
+        }
+
+        return new Pair<>(pathTransition, visualFrame);
     }
 
     /**

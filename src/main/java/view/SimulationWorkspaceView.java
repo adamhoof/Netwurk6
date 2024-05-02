@@ -1,9 +1,9 @@
 package view;
 
-import common.AutoNameGenerator;
-import common.NetworkDevice;
-import common.NetworkDeviceType;
+import com.google.common.eventbus.Subscribe;
+import common.*;
 import controller.MasterController;
+import javafx.animation.PathTransition;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -16,6 +16,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
@@ -56,6 +57,7 @@ public class SimulationWorkspaceView {
         this.stage = stage;
         stage.setMinWidth(1200);
         stage.setMinHeight(1000);
+        GlobalEventBus.register(this);
         initializeView();
     }
 
@@ -240,14 +242,14 @@ public class SimulationWorkspaceView {
         setupCursorFollowingDeviceClickEvent();
     }
 
-    private void setupKeyPressEvents(){
+    private void setupKeyPressEvents() {
         setupEscKeyPressEvent();
     }
 
-    private void setupEscKeyPressEvent(){
+    private void setupEscKeyPressEvent() {
         scene.setOnKeyPressed(pressEvent -> {
             if (pressEvent.getCode() == KeyCode.ESCAPE) {
-                if (cursorFollowingDeviceHandler.isFollowing()){
+                if (cursorFollowingDeviceHandler.isFollowing()) {
                     removeNode(cursorFollowingDeviceHandler.get());
                     cursorFollowingDeviceHandler.drop();
                 }
@@ -446,7 +448,8 @@ public class SimulationWorkspaceView {
 
     /**
      * Updates the position of a connection line based on the movement of network devices.
-     * @param connectionLine    the connection line to be updated
+     *
+     * @param connectionLine the connection line to be updated
      */
     private void updateLabelPositions(ConnectionLine connectionLine) {
         double centerX = (connectionLine.getStartX() + connectionLine.getEndX()) / 2;
@@ -525,6 +528,22 @@ public class SimulationWorkspaceView {
         Platform.runLater(() -> {
             logArea.print(text);
         });
+    }
+
+    @Subscribe
+    public void handleNetworkConnectionAnimationRequestEvent(NetworkCommunicationAnimationRequestEvent event) {
+        Platform.runLater(() -> {
+            Rectangle visualFrame = event.frameThroughNetworkConnection().getValue();
+            PathTransition animationPath = event.frameThroughNetworkConnection().getKey();
+
+            addNode(visualFrame);
+            animationPath.setOnFinished(animationFinishedEvent -> {
+                removeNode(visualFrame);
+                GlobalEventBus.post(new NetworkCommunicationAnimationFinishedEvent(event.communicationId()));
+            });
+            animationPath.play();
+        });
+
     }
 }
 
