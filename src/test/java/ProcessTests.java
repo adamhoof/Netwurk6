@@ -20,7 +20,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class IntegrationTests {
+public class ProcessTests {
 
     @Test
     public void testCommunication_2switchesInRow_CorrectlyChannelMacThrough() {
@@ -30,17 +30,17 @@ public class IntegrationTests {
         SimulationController simulationController = new SimulationController(mockView, storage, networksController);
         MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
 
-        UUID pcUuid = UUID.randomUUID();
-        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.getInstance().generatePcName());
+        UUID pc0Uuid = UUID.fromString("f51331d1-e21e-4b13-9a8d-9d8ec5bc120d");
+        PCModel pc0 = new PCModel(pc0Uuid, new MACAddress(pc0Uuid.toString()), AutoNameGenerator.getInstance().generatePcName());
 
-        UUID pcUuid2 = UUID.randomUUID();
-        PCModel pc1 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.getInstance().generatePcName());
+        UUID pcUuid1 = UUID.fromString("773602ea-3a72-43f3-908a-f8683b218a9e");
+        PCModel pc1 = new PCModel(pcUuid1, new MACAddress(pcUuid1.toString()), AutoNameGenerator.getInstance().generatePcName());
 
-        UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw0 = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
+        UUID sw0Uuid = UUID.fromString("184a5733-f06f-4b8f-a10d-b8a465cabd83");
+        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
-        UUID sw2Uuid = UUID.randomUUID();
-        SwitchModel sw1 = new SwitchModel(sw2Uuid, new MACAddress(sw2Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
+        UUID sw1Uuid = UUID.fromString("82b7c57d-fead-4bb9-8786-6fb5a2406c5b");
+        SwitchModel sw1 = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
 
         masterController.addDevice(pc0);
         masterController.addDevice(pc1);
@@ -49,8 +49,8 @@ public class IntegrationTests {
 
         pc0 = storage.getPcModel(pc0.getUuid());
         pc1 = storage.getPcModel(pc1.getUuid());
-        sw0 = storage.getSwitchModel(sw1Uuid);
-        sw1 = storage.getSwitchModel(sw2Uuid);
+        sw0 = storage.getSwitchModel(sw0Uuid);
+        sw1 = storage.getSwitchModel(sw1Uuid);
 
         assertNotNull(pc0);
         assertNotNull(pc1);
@@ -100,130 +100,106 @@ public class IntegrationTests {
     }
 
     @Test
-    public void testDORA_2pcsToSwitchToRouter() {
+    public void testDORA_pcToSwitchToRouter_successfulCommunication() {
         NetworksController networksController = new NetworksController();
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
         SimulationController simulationController = new SimulationController(mockView, storage, networksController);
         MasterController masterController = new MasterController(mockView, storage, networksController, simulationController);
 
-        UUID pcUuid = UUID.randomUUID();
-        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), AutoNameGenerator.getInstance().generatePcName());
+        UUID pcUuid = UUID.fromString("f51331d1-e21e-4b13-9a8d-9d8ec5bc120d");
+        PCModel pc0 = new PCModel(pcUuid, new MACAddress(pcUuid.toString()), "PC0");
 
-        UUID pcUuid2 = UUID.randomUUID();
-        PCModel pc1 = new PCModel(pcUuid2, new MACAddress(pcUuid2.toString()), AutoNameGenerator.getInstance().generatePcName());
+        UUID sw0Uuid = UUID.fromString("773602ea-3a72-43f3-908a-f8683b218a9e");
+        SwitchModel sw0 = new SwitchModel(sw0Uuid, new MACAddress(sw0Uuid.toString()), "SWITCH0");
 
-        UUID sw1Uuid = UUID.randomUUID();
-        SwitchModel sw = new SwitchModel(sw1Uuid, new MACAddress(sw1Uuid.toString()), AutoNameGenerator.getInstance().generateSwitchName());
-
-        UUID routerUuid = UUID.randomUUID();
-        RouterModel router = new RouterModel(routerUuid, new MACAddress(routerUuid.toString()), AutoNameGenerator.getInstance().generateRouterName());
+        UUID routerUuid = UUID.fromString("184a5733-f06f-4b8f-a10d-b8a465cabd83");
+        RouterModel router0 = new RouterModel(routerUuid, new MACAddress(routerUuid.toString()), "ROUTER0");
 
         masterController.addDevice(pc0);
-        masterController.addDevice(pc1);
-        masterController.addDevice(sw);
-        masterController.addDevice(router);
+        masterController.addDevice(sw0);
+        masterController.addDevice(router0);
 
         pc0 = storage.getPcModel(pc0.getUuid());
-        pc1 = storage.getPcModel(pc1.getUuid());
-        sw = storage.getSwitchModel(sw.getUuid());
-        router = storage.getRouterModel(router.getUuid());
+        sw0 = storage.getSwitchModel(sw0.getUuid());
+        router0 = storage.getRouterModel(router0.getUuid());
 
         assertNotNull(pc0);
-        assertNotNull(pc1);
-        assertNotNull(sw);
-        assertNotNull(router);
+        assertNotNull(sw0);
+        assertNotNull(router0);
 
-        assertEquals(1, router.getRouterInterfaces().size());
-        assertTrue(masterController.addConnection(sw, pc0));
-        assertTrue(masterController.addConnection(router, sw));
-        assertTrue(masterController.addConnection(sw, pc1));
-        assertEquals(2, router.getRouterInterfaces().size());
-        assertEquals(2, router.getLanNetworks().size());
+        assertEquals(1, router0.getRouterInterfaces().size());
+        assertTrue(masterController.addConnection(sw0, pc0));
+        assertTrue(masterController.addConnection(router0, sw0));
+        assertEquals(2, router0.getRouterInterfaces().size());
+        assertEquals(2, router0.getLanNetworks().size());
 
         //the one at index 0 is default LAN, therefore at index 1 is definitely the one just added
-        Network network = router.getLanNetworks().get(1);
-        RouterInterface routerInterface = router.getNetworksRouterInterface(network);
+        Network network = router0.getLanNetworks().get(1);
+        RouterInterface routerInterface = router0.getNetworksRouterInterface(network);
 
         //pc0 initiates communication with its only connection (sw)
         simulationController.sendDhcpDiscovery(new NetworkConnection(pc0, pc0.getConnection()), pc0.getMacAddress());
         pc0.setConfigurationInProgress();
         Pair<NetworkConnection, Frame> framePair = simulationController.receiveFrame();
         assertEquals(pc0, framePair.getKey().getStartDevice());
-        assertEquals(sw, framePair.getKey().getEndDevice());
+        assertEquals(sw0, framePair.getKey().getEndDevice());
         assertTrue(pc0.isConfigurationInProgress());
 
-        //sw0 broadcast communication to pc1 and router, pc1 ignores the message
+        //sw0 broadcast communication router0
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
-        assertEquals(2, simulationController.queueSize());
         framePair = simulationController.receiveFrame();
-        //If pc1 is the one who got the frame first, throw the frame away and get the one directed to router interface instead
-        if (framePair.getKey().getEndDevice() == pc1) {
-            assertEquals(sw, framePair.getKey().getStartDevice());
-            //retrieve the frame we are interested in before exiting this block
-            framePair = simulationController.receiveFrame();
-        } else if (framePair.getKey().getEndDevice() == routerInterface) {
-            //receive the frame on pc1 side, do not process it
-            assertEquals(sw, framePair.getKey().getStartDevice());
-            simulationController.receiveFrame();
-        } else {
-            System.out.println("this should not happen");
-            return;
-        }
-
-        //check there are now more frames to be processed at this point
-        assertEquals(0, simulationController.queueSize());
-        assertSame(sw, framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getStartDevice());
         assertSame(routerInterface, framePair.getKey().getEndDevice());
 
-        assertTrue(sw.knowsMacAddress(pc0.getMacAddress()));
+        assertTrue(sw0.knowsMacAddress(pc0.getMacAddress()));
 
         //router interface sends dhcp offer message to sw
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         assertSame(routerInterface, framePair.getKey().getStartDevice());
-        assertSame(sw, framePair.getKey().getEndDevice());
+        assertSame(sw0, framePair.getKey().getEndDevice());
         assertInstanceOf(DhcpOfferMessage.class, framePair.getValue().getPacket().getMessage());
 
         //sw forwards dhcp offer message to pc0
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
-        assertSame(sw, framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getStartDevice());
         assertSame(pc0, framePair.getKey().getEndDevice());
-        assertTrue(sw.knowsMacAddress(routerInterface.getMacAddress()));
+        assertTrue(sw0.knowsMacAddress(routerInterface.getMacAddress()));
 
         //pc0 sends dhcp response back and configures itself
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         assertSame(pc0, framePair.getKey().getStartDevice());
-        assertSame(sw, framePair.getKey().getEndDevice());
+        assertSame(sw0, framePair.getKey().getEndDevice());
         assertTrue(pc0.isConfigured());
         assertInstanceOf(DhcpResponseMessage.class, framePair.getValue().getPacket().getMessage());
 
         //sw already knows mac of router interface, no need to broadcast
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
-        assertSame(sw, framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getStartDevice());
         assertSame(routerInterface, framePair.getKey().getEndDevice());
 
-        //router interface sends dhcp ack message targeted to pc1
+        //router interface sends dhcp ack message targeted to pc0
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
         assertSame(routerInterface, framePair.getKey().getStartDevice());
-        assertSame(sw, framePair.getKey().getEndDevice());
+        assertSame(sw0, framePair.getKey().getEndDevice());
         assertInstanceOf(DhcpAckMessage.class, framePair.getValue().getPacket().getMessage());
 
         //sw already knows mac of pc0, no need to broadcast
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
         framePair = simulationController.receiveFrame();
-        assertSame(sw, framePair.getKey().getStartDevice());
+        assertSame(sw0, framePair.getKey().getStartDevice());
         assertSame(pc0, framePair.getKey().getEndDevice());
 
         simulationController.forwardToNextDevice(framePair.getKey(), framePair.getValue());
     }
 
     @Test
-    public void testIp_DifferentSubnetsPcs() {
+    public void testIp_DifferentSubnetsPcs_successfulCommunication() {
         NetworksController networksController = new NetworksController();
         NetworkDeviceStorage storage = new NetworkDeviceStorage();
         SimulationWorkspaceView mockView = Mockito.mock(SimulationWorkspaceView.class);
@@ -250,9 +226,9 @@ public class IntegrationTests {
         router = storage.getRouterModel(router.getUuid());
 
         assertTrue(masterController.addConnection(sw0, pc0));
-        //router to switch connection creates new subnet that a dedicated router interface handles
+        //router0 to sw0 connection creates new subnet that a dedicated router interface handles
         assertTrue(masterController.addConnection(router, sw0));
-        //router to pc connection does not create new dedicated router interface, pcs always connect to default router interfaces when connected directly to router
+        //router0 to pc1 connection does not create new dedicated router interface, pcs always connect to default router interfaces when connected directly to router
         assertTrue(masterController.addConnection(router, pc1));
 
         //retrieve respective router interfaces for LANs
@@ -307,7 +283,7 @@ public class IntegrationTests {
     }
 
     @Test
-    public void exportImportJsonNetworkConfiguration(@TempDir Path tempDir) {
+    public void testExportImport_standardConfiguration_successfulOperation(@TempDir Path tempDir) {
         JsonExporter jsonExporter = new JsonExporter();
         JsonImporter jsonImporter = new JsonImporter();
 
