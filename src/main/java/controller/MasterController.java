@@ -117,28 +117,29 @@ public class MasterController {
             simulationWorkspaceView.printToLogWindow("Can't connect to itself\n", Color.RED);
             return false;
         }
-        NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
-        NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
 
-        if (firstModel instanceof PCModel && secondModel instanceof PCModel) {
+        if (first.getNetworkDeviceType() == NetworkDeviceType.PC && second.getNetworkDeviceType() == NetworkDeviceType.PC) {
             simulationWorkspaceView.printToLogWindow("Can't connect PC to PC\n", Color.RED);
             return false;
         }
 
-        if ((firstModel instanceof PCModel pc1 && pc1.getConnection() != null) || secondModel instanceof PCModel pc2 && pc2.getConnection() != null) {
+        NetworkDeviceModel firstModel = deviceStorage.get(first.getUuid());
+        NetworkDeviceModel secondModel = deviceStorage.get(second.getUuid());
+
+        if ((firstModel instanceof PCModel pc1 && pc1.hasConnection()) || secondModel instanceof PCModel pc2 && pc2.hasConnection()) {
             simulationWorkspaceView.printToLogWindow("Can't connect PC to multiple networks\n", Color.RED);
             return false;
         }
 
         if (firstModel == null || secondModel == null) {
-            System.out.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
+            System.err.printf("Unable to create connection: First device: %s, Second device: %s", firstModel, secondModel);
             return false;
         }
 
         if (firstModel instanceof RouterModel firstRouter && secondModel instanceof RouterModel secondRouter) {
             networksController.createWanLink(firstRouter, secondRouter);
-            deviceStorage.addRouterInterface(firstRouter.getRouterInterfaces().lastEntry().getValue());
-            deviceStorage.addRouterInterface(secondRouter.getRouterInterfaces().lastEntry().getValue());
+            deviceStorage.addRouterInterface(firstRouter.getLastRouterInterface());
+            deviceStorage.addRouterInterface(secondRouter.getLastRouterInterface());
             return true;
         }
         //For now, RouterModel handles the connection for the second device, so we need to return after adding the second model
