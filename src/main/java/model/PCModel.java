@@ -62,11 +62,15 @@ public class PCModel extends NetworkDeviceModel {
 
     @Override
     public boolean addConnection(NetworkDeviceModel networkDeviceModel) {
-        if (connection != null) {
+        if (hasConnection()) {
             return false;
         }
         connection = networkDeviceModel;
         return true;
+    }
+
+    public boolean hasConnection(){
+        return connection != null;
     }
 
     public NetworkDeviceModel getConnection() {
