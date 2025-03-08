@@ -2,6 +2,10 @@
 
 SpudrNet6 is intuitive tool for network communication simulation. It is designed for visualizing and experimenting with basics of network environments of small to medium scale. It offers the ability to build network topology by placing network devices and connections between them, start and pause simulation of DHCP, ARP, IP and RIP in real-time with nice logger to capture ongoing operations. The goal is to deepen the user understanding of the beforementioned network communication principles.
 
+## Demo video
+
+https://github.com/user-attachments/assets/08e09fbf-a004-4fe6-ac9e-8b95fa8c0107
+
 ---
 
 ### Functionality and control
